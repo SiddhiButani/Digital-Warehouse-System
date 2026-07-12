@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}DWMS - {% if edit_mode %}Edit Product {{ product.id }}{% else %}Product {{ product.id }} Details{% endif %}{% endblock %}
+
+{% block content %}
+<div class="header-container">
+    <div class="page-title">
+        <h1>
+            {% if edit_mode %}
+                Edit Product: {{ product.id }}
+            {% else %}
+                Product Details: {{ product.product_name }}
+            {% endif %}
+        </h1>
+        <p>
+            {% if edit_mode %}
+                Modify details and shelf allocations
+            {% else %}
+                View SKU, QR Code label, and logs
+            {% endif %}
+        </p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('products.index') }}" class="btn btn-secondary">
+            <i class='bx bx-arrow-back'></i>
+            <span>Back to Inventory</span>
+        </a>
+    </div>
+</div>
+
+{% if not edit_mode %}
+    <!-- VIEW MODE -->
+    <div class="content-grid">
+        <!-- Product Profile Card -->
+        <div class="glass-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div class="panel-header">
+                <h2>Product Information</h2>
+                {% if session.get('user_role') in ['Admin', 'Manager'] %}
+                    <a href="{{ url_for('products.edit_product', product_id=product.id) }}" class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem;">
+                        <i class='bx bx-edit-alt'></i>
+                        <span>Edit</span>
+                    </a>
+                {% endif %}
+            </div>
+            
+            <div class="panel-content" style="display: flex; gap: 24px;">
+                <!-- Details List -->
+                <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 16px;">
+                    <div>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">SKU Code</span>
+                        <h3 style="font-size: 1.5rem; font-family: monospace; color: var(--accent-purple);">{{ product.id }}</h3>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Name</span>
+                        <p style="font-size: 1.1rem; font-weight: 600;">{{ product.product_name }}</p>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Category</span>
+                            <p style="font-weight: 500;">{{ product.category }}</p>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Unit Price</span>
+                            <p style="font-weight: 600; color: var(--accent-success);">${{ "{:,.2f}".format(product.unit_price) }}</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Current Stock</span>
+                            <p>
+                                {% if product.quantity <= 10 %}
+                                    <span class="badge badge-danger" style="font-weight: 700;">{{ product.quantity }} Units</span>
+                                {% else %}
+                                    <span class="badge badge-success" style="font-weight: 700;">{{ product.quantity }} Units</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Shelf Location</span>
+                            <p style="font-weight: 600;">
+                                {{ product.shelf_id or 'Unassigned' }}
+                                {% if product.shelf_zone %}
+                                    <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-secondary);">({{ product.shelf_zone }})</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Supplier Partner</span>
+                        <p style="font-weight: 500;">{{ product.supplier_name or 'None' }}</p>
+                    </div>
+                </div>
+
+                <!-- QR Code & Printable Sticker Card -->
+                <div class="glass-panel" style="width: 220px; padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; border-color: rgba(255, 255, 255, 0.05); background: rgba(0,0,0,0.15);">
+                    <div style="background: white; padding: 12px; border-radius: 12px; display: inline-block;">
+                        <img src="{{ url_for('static', filename=product.qr_code_path) }}" alt="QR Code" style="width: 140px; height: 140px; display: block;">
+                    </div>
+                    <div style="margin-top: 12px;">
+                        <span style="font-family: monospace; font-size: 0.8rem; font-weight: 700; color: white;">{{ product.id }}</span>
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">QR Code Label</p>
+                    </div>
+                    <button onclick="window.print();" class="btn btn-secondary" style="width: 100%; justify-content: center; margin-top: 14px; padding: 8px; font-size: 0.8rem; border-color: var(--accent-purple);">
+                        <i class='bx bx-printer'></i>
+                        <span>Print Sticker</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Log / Transactions History -->
+        <div class="glass-panel">
+            <div class="panel-header">
+                <h2>Product Transaction Logs</h2>
+            </div>
+            <div class="panel-content" style="max-height: 400px; overflow-y: auto;">
+                {% if transactions %}
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Type</th>
+                                    <th>Quantity</th>
+                                    <th>User</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tx in transactions %}
+                                    <tr>
+                                        <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ tx.date }}</td>
+                                        <td>
+                                            {% if tx.transaction_type == 'IN' %}
+                                                <span class="badge badge-success">IN</span>
+                                            {% elif tx.transaction_type == 'OUT' %}
+                                                <span class="badge badge-danger">OUT</span>
+                                            {% else %}
+                                                <span class="badge badge-warning">ADJUST</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="font-weight: 700;">{{ tx.quantity }}</td>
+                                        <td style="color: var(--text-secondary);">{{ tx.username }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 40px 0; color: var(--text-muted);">
+                        <i class='bx bx-history' style="font-size: 2.5rem; margin-bottom: 8px; display: block;"></i>
+                        <p>No transaction history logged for this product.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+{% else %}
+    <!-- EDIT MODE -->
+    <div style="max-width: 600px; margin: 0 auto;">
+        <div class="glass-panel">
+            <div class="panel-header">
+                <h2>Edit Details</h2>
+            </div>
+            <div class="panel-content">
+                <form action="{{ url_for('products.edit_product', product_id=product.id) }}" method="POST">
+                    <div class="form-group">
+                        <label class="form-label">Product ID (SKU - Cannot change)</label>
+                        <input type="text" class="form-control" value="{{ product.id }}" disabled style="font-family: monospace; color: var(--text-secondary); cursor: not-allowed; background: rgba(0,0,0,0.3);">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product_name" class="form-label">Product Name</label>
+                        <input type="text" id="product_name" name="product_name" class="form-control" value="{{ product.product_name }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="category" class="form-label">Category</label>
+                        <input type="text" id="category" name="category" class="form-control" value="{{ product.category }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="unit_price" class="form-label">Unit Price ($)</label>
+                        <input type="number" id="unit_price" name="unit_price" class="form-control" value="{{ product.unit_price }}" step="0.01" min="0.00" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="shelf_id" class="form-label">Warehouse Shelf Allocation</label>
+                        <select id="shelf_id" name="shelf_id" class="form-control">
+                            <option value="">-- Unassigned / Virtual Stock --</option>
+                            {% for s in shelves %}
+                                <option value="{{ s.shelf_id }}" {% if product.shelf_id == s.shelf_id %}selected{% endif %}>
+                                    {{ s.shelf_id }} ({{ s.zone }} - Cap: {{ s.capacity }}, Occ: {{ s.occupancy }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="supplier_id" class="form-label">Supplier Partner</label>
+                        <select id="supplier_id" name="supplier_id" class="form-control">
+                            <option value="">-- No Supplier Assigned --</option>
+                            {% for sup in suppliers %}
+                                <option value="{{ sup.id }}" {% if product.supplier_id == sup.id %}selected{% endif %}>
+                                    {{ sup.company_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; margin-top: 24px;">
+                        <button type="submit" class="btn btn-primary" style="flex-grow: 1; justify-content: center; padding: 12px;">
+                            <i class='bx bx-save'></i>
+                            <span>Save Changes</span>
+                        </button>
+                        <a href="{{ url_for('products.view_product', product_id=product.id) }}" class="btn btn-secondary" style="padding: 12px 20px;">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Style for sticker printing -->
+<style>
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .app-container, .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    /* Only print the QR sticker card */
+    .glass-panel:has(img[alt="QR Code"]) {
+        visibility: visible !important;
+        position: absolute;
+        left: 50%;
+        top: 30%;
+        transform: translate(-50%, -50%);
+        border: 2px solid black !important;
+        background: white !important;
+        color: black !important;
+        box-shadow: none !important;
+        padding: 24px !important;
+        border-radius: 12px !important;
+        width: 260px !important;
+    }
+    .glass-panel:has(img[alt="QR Code"]) * {
+        visibility: visible !important;
+        color: black !important;
+    }
+    .glass-panel:has(img[alt="QR Code"]) button {
+        display: none !important;
+    }
+}
+</style>
+{% endblock %}

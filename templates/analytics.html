@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}DWMS - Inventory Analytics{% endblock %}
+
+{% block content %}
+<div class="header-container">
+    <div class="page-title">
+        <h1>Analytics Dashboard</h1>
+        <p>In-depth statistics on warehouse efficiency, category values, and flow trends</p>
+    </div>
+</div>
+
+<!-- Analytics Charts Grid -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+    
+    <!-- Chart 1: Stock Movement Line Chart -->
+    <div class="glass-panel" style="display: flex; flex-direction: column;">
+        <div class="panel-header" style="border-bottom: none; padding-bottom: 0;">
+            <h2>Stock Movements Trend</h2>
+        </div>
+        <div class="panel-content" style="display: flex; align-items: center; justify-content: center; flex-grow: 1;">
+            {% if chart_movement %}
+                <img src="{{ chart_movement }}" alt="Stock Movement Chart" style="max-width: 100%; height: auto; display: block;">
+            {% else %}
+                <div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+                    <i class='bx bx-line-chart' style="font-size: 3rem; margin-bottom: 8px; display: block;"></i>
+                    <p>Insufficient transaction data to plot movements.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Chart 2: Category Breakdown Donut Chart -->
+    <div class="glass-panel" style="display: flex; flex-direction: column;">
+        <div class="panel-header" style="border-bottom: none; padding-bottom: 0;">
+            <h2>Category Distribution</h2>
+        </div>
+        <div class="panel-content" style="display: flex; align-items: center; justify-content: center; flex-grow: 1;">
+            {% if chart_category %}
+                <img src="{{ chart_category }}" alt="Category Pie Chart" style="max-width: 100%; height: auto; display: block;">
+            {% else %}
+                <div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+                    <i class='bx bx-pie-chart-alt-2' style="font-size: 3rem; margin-bottom: 8px; display: block;"></i>
+                    <p>No products found to compile category shares.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Chart 3: Warehouse Capacity Bar Chart -->
+    <div class="glass-panel" style="display: flex; flex-direction: column;">
+        <div class="panel-header" style="border-bottom: none; padding-bottom: 0;">
+            <h2>Zone Limits & Load</h2>
+        </div>
+        <div class="panel-content" style="display: flex; align-items: center; justify-content: center; flex-grow: 1;">
+            {% if chart_zone %}
+                <img src="{{ chart_zone }}" alt="Zone Utilization Chart" style="max-width: 100%; height: auto; display: block;">
+            {% else %}
+                <div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+                    <i class='bx bx-bar-chart-alt-2' style="font-size: 3rem; margin-bottom: 8px; display: block;"></i>
+                    <p>No warehouse zones registered in the system.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Chart 4: Fast Moving Items horizontal Bar Chart -->
+    <div class="glass-panel" style="display: flex; flex-direction: column;">
+        <div class="panel-header" style="border-bottom: none; padding-bottom: 0;">
+            <h2>Highest Velocity Products</h2>
+        </div>
+        <div class="panel-content" style="display: flex; align-items: center; justify-content: center; flex-grow: 1;">
+            {% if chart_fast %}
+                <img src="{{ chart_fast }}" alt="Fast Moving Items Chart" style="max-width: 100%; height: auto; display: block;">
+            {% else %}
+                <div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+                    <i class='bx bx-trending-up' style="font-size: 3rem; margin-bottom: 8px; display: block;"></i>
+                    <p>No outgoing shipments logged to rank product velocities.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Row 3: Slow Moving Products Table -->
+<div class="glass-panel" style="margin-bottom: 32px;">
+    <div class="panel-header">
+        <h2>Slow-Moving Inventory Alert</h2>
+        <span class="badge badge-warning">High Risk of Dead Stock</span>
+    </div>
+    <div class="panel-content">
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 20px;">
+            The following products have minimal outward shipments (low OUT transactions) but are occupying physical warehouse shelf space. Consider adjustments or promotional clearance.
+        </p>
+        {% if slow_moving %}
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Product SKU</th>
+                            <th>Product Name</th>
+                            <th>Current Inventory Count</th>
+                            <th>Cumulative Units Shipped</th>
+                            <th>Status Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in slow_moving %}
+                            <tr>
+                                <td>
+                                    <span class="badge badge-info" style="font-family: monospace; font-size: 0.85rem;">{{ s.id }}</span>
+                                </td>
+                                <td style="font-weight: 600;">{{ s.product_name }}</td>
+                                <td style="font-weight: 700;">{{ s.quantity }} units</td>
+                                <td style="color: var(--text-secondary); font-weight: 600;">
+                                    {{ s.total_sold }} units
+                                </td>
+                                <td>
+                                    {% if s.quantity > 50 and s.total_sold == 0 %}
+                                        <span class="badge badge-danger">Critical Dead Stock</span>
+                                    {% else %}
+                                        <span class="badge badge-warning">Low Flow</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p style="color: var(--text-muted); text-align: center; padding: 20px 0;">No slow-moving products analyzed.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

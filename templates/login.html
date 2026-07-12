@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DWMS - Login</title>
+    <!-- Boxicons CDN -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+    <div class="login-wrapper">
+        <div class="glass-panel login-card">
+            <div class="login-header">
+                <i class='bx bx-cube-alt' style="font-size: 3.5rem; color: var(--accent-purple); filter: drop-shadow(0 0 8px var(--accent-purple-glow));"></i>
+                <h2>Digital Warehouse</h2>
+                <p>Management System Portal</p>
+            </div>
+
+            <!-- Flash alerts inside login panel -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert-box alert-{{ 'danger' if category == 'error' else category }}" style="padding: 12px; margin-bottom: 20px; font-size: 0.85rem;">
+                            <i class="bx {% if category == 'error' %}bx-error-circle{% else %}bx-check-circle{% endif %}"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('auth.login') }}" method="POST">
+                <div class="form-group">
+                    <label for="username" class="form-label">Username</label>
+                    <div style="position: relative;">
+                        <input type="text" id="username" name="username" class="form-control" placeholder="Enter username" required style="padding-left: 40px;">
+                        <i class='bx bxs-user' style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 1.1rem;"></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <div style="position: relative;">
+                        <input type="password" id="password" name="password" class="form-control" placeholder="Enter password" required style="padding-left: 40px;">
+                        <i class='bx bxs-lock-alt' style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 1.1rem;"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 10px; padding: 12px;">
+                    Sign In
+                </button>
+            </form>
+            
+            <div style="margin-top: 24px; text-align: center; font-size: 0.75rem; color: var(--text-muted);">
+                <p>Default credentials (Username/Password):</p>
+                <div style="display: flex; justify-content: space-around; margin-top: 6px;">
+                    <span>admin / admin123</span>
+                    <span>manager / manager123</span>
+                    <span>staff / staff123</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,9 @@
+flask
+opencv-python
+qrcode[pil]
+pandas
+numpy
+matplotlib
+openpyxl
+reportlab
+werkzeug

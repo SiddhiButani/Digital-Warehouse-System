@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Digital Warehouse Management System{% endblock %}</title>
+    <!-- Boxicons CDN for modern premium icons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class='bx bx-cube-alt' style="font-size: 2.2rem; color: var(--accent-purple); filter: drop-shadow(0 0 5px var(--accent-purple-glow));"></i>
+                <span>DWMS Panel</span>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li class="sidebar-item {% if active_page == 'dashboard' %}active{% endif %}">
+                    <a href="{{ url_for('dashboard.index') }}">
+                        <i class='bx bxs-dashboard'></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-item {% if active_page == 'products' %}active{% endif %}">
+                    <a href="{{ url_for('products.index') }}">
+                        <i class='bx bx-package'></i>
+                        <span>Products</span>
+                    </a>
+                </li>
+                <li class="sidebar-item {% if active_page == 'inventory' %}active{% endif %}">
+                    <a href="{{ url_for('inventory.index') }}">
+                        <i class='bx bx-transfer-alt'></i>
+                        <span>Stock Movement</span>
+                    </a>
+                </li>
+                <li class="sidebar-item {% if active_page == 'scanner' %}active{% endif %}">
+                    <a href="{{ url_for('inventory.scanner_page') }}">
+                        <i class='bx bx-qr-scan'></i>
+                        <span>QR Code Scanner</span>
+                    </a>
+                </li>
+                {% if session.get('user_role') in ['Admin', 'Manager'] %}
+                <li class="sidebar-item {% if active_page == 'suppliers' %}active{% endif %}">
+                    <a href="{{ url_for('suppliers.index') }}">
+                        <i class='bx bxs-truck'></i>
+                        <span>Suppliers</span>
+                    </a>
+                </li>
+                {% endif %}
+                <li class="sidebar-item {% if active_page == 'analytics' %}active{% endif %}">
+                    <a href="{{ url_for('analytics.index') }}">
+                        <i class='bx bx-line-chart'></i>
+                        <span>Analytics</span>
+                    </a>
+                </li>
+                <li class="sidebar-item {% if active_page == 'reports' %}active{% endif %}">
+                    <a href="{{ url_for('reports.index') }}">
+                        <i class='bx bxs-file-pdf'></i>
+                        <span>Reports Export</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    {{ session.get('username', 'U')[0] | upper }}
+                </div>
+                <div class="user-info">
+                    <h4>{{ session.get('username', 'Guest') }}</h4>
+                    <p>{{ session.get('user_role', 'Staff') }}</p>
+                </div>
+                <a href="{{ url_for('auth.logout') }}" class="logout-btn" title="Logout">
+                    <i class='bx bx-log-out'></i>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Alert Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="alerts-container">
+                        {% for category, message in messages %}
+                            <div class="alert-box alert-{{ 'danger' if category == 'error' else category }}">
+                                <i class="bx {% if category == 'error' %}bx-error-circle{% elif category == 'success' %}bx-check-circle{% else %}bx-info-circle{% endif %}" style="font-size: 1.25rem;"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}DWMS - Camera QR Scanner{% endblock %}
+
+{% block content %}
+<div class="header-container">
+    <div class="page-title">
+        <h1>Webcam QR Code Scanner</h1>
+        <p>Align a product's QR code sticker in the camera feed to trigger automated inventory updates</p>
+    </div>
+</div>
+
+<div class="content-grid">
+    <!-- Left Column: Camera Feed -->
+    <div class="glass-panel">
+        <div class="panel-header">
+            <h2>Live Camera Stream</h2>
+            <span id="scan-status" class="badge badge-warning">Initializing Camera...</span>
+        </div>
+        <div class="panel-content scanner-container" style="padding: 16px;">
+            <div class="scanner-overlay-container">
+                <video id="video" autoplay playsinline style="display: none;"></video>
+                <canvas id="canvas" style="width: 100%; border-radius: 12px; background: #000; display: block; border: 2px solid var(--border-color);"></canvas>
+                <div id="laser" class="scanner-laser" style="display: none;"></div>
+            </div>
+            
+            <div style="display: flex; gap: 12px; width: 100%; justify-content: center;">
+                <button id="btn-toggle" class="btn btn-secondary" onclick="toggleScanner()">
+                    <i class='bx bx-play-circle'></i>
+                    <span>Start Scanner</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Scan Result Workstation -->
+    <div class="glass-panel">
+        <div class="panel-header">
+            <h2>Scan Workstation</h2>
+        </div>
+        <div class="panel-content" id="workstation-content">
+            <!-- Default idle panel -->
+            <div id="idle-panel" style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                <i class='bx bx-qr-scan' style="font-size: 4.5rem; color: var(--accent-purple); animation: pulse 2s infinite; margin-bottom: 16px; display: block;"></i>
+                <h3>Ready to Scan</h3>
+                <p style="font-size: 0.85rem; margin-top: 8px;">Start the camera and hold the product QR code label up to the lens. The system will automatically detect the SKU and load details here.</p>
+            </div>
+
+            <!-- Scanned Product Action Panel -->
+            <div id="scanned-panel" style="display: none;">
+                <div class="glass-panel" style="padding: 16px; border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.03); margin-bottom: 24px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class='bx bx-check-double' style="font-size: 2rem; color: var(--accent-success);"></i>
+                        <div>
+                            <h3 style="color: white; font-size: 1.1rem;">SKU Code Detected</h3>
+                            <span id="res-sku" style="font-family: monospace; font-size: 0.9rem; font-weight: 700; color: var(--accent-teal);">PROD-1001</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+                    <div>
+                        <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Product Name</span>
+                        <p id="res-name" style="font-size: 1.25rem; font-weight: 700; color: white;">Wireless Mouse</p>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Current Warehouse Stock</span>
+                            <p id="res-qty" style="font-size: 1.1rem; font-weight: 600; color: white;">50 Units</p>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Shelf Location</span>
+                            <p id="res-shelf" style="font-size: 1.1rem; font-weight: 600; color: white;">A-01</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Update Form -->
+                <form id="scan-adjust-form" action="{{ url_for('inventory.adjust_stock') }}" method="POST">
+                    <input type="hidden" id="form-sku" name="product_id">
+                    
+                    <div class="form-group">
+                        <label for="form-type" class="form-label">Scan Action</label>
+                        <select id="form-type" name="type" class="form-control" required>
+                            <option value="IN">Stock IN (Add items to warehouse)</option>
+                            <option value="OUT">Stock OUT (Remove items from warehouse)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="form-qty" class="form-label">Quantity to Adjust</label>
+                        <input type="number" id="form-qty" name="quantity" class="form-control" min="1" value="1" required>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; margin-top: 24px;">
+                        <button type="submit" class="btn btn-teal" style="flex-grow: 1; justify-content: center;">
+                            <i class='bx bx-check-shield'></i>
+                            <span>Commit Stock Change</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="resumeScanning()">
+                            <i class='bx bx-refresh'></i>
+                            <span>Scan Next</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.7; }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let video = document.getElementById('video');
+let canvas = document.getElementById('canvas');
+let ctx = canvas.getContext('2d');
+let laser = document.getElementById('laser');
+let scanStatus = document.getElementById('scan-status');
+let btnToggle = document.getElementById('btn-toggle');
+
+let isScanning = false;
+let stream = null;
+let scanInterval = null;
+
+// Initialize synthesized sound feedback (Beep)
+function playBeep() {
+    try {
+        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let oscillator = audioCtx.createOscillator();
+        let gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.15); // beep for 150ms
+    } catch (e) {
+        console.log("Audio feedback not supported or blocked by browser.");
+    }
+}
+
+async function startCamera() {
+    try {
+        scanStatus.innerText = "Requesting Camera...";
+        scanStatus.className = "badge badge-warning";
+        
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } } 
+        });
+        
+        video.srcObject = stream;
+        video.play();
+        
+        isScanning = true;
+        laser.style.display = "block";
+        scanStatus.innerText = "SCANNING LIVE";
+        scanStatus.className = "badge badge-success";
+        
+        btnToggle.innerHTML = "<i class='bx bx-stop-circle'></i><span>Stop Scanner</span>";
+        btnToggle.className = "btn btn-secondary";
+        btnToggle.style.borderColor = "var(--accent-danger)";
+        
+        // Start rendering frame to canvas & scanning
+        requestAnimationFrame(renderCanvas);
+        scanInterval = setInterval(captureFrameAndScan, 500); // scan frame every 500ms
+    } catch (err) {
+        console.error("Camera access error: ", err);
+        scanStatus.innerText = "Camera Access Failed";
+        scanStatus.className = "badge badge-danger";
+        isScanning = false;
+        alert("Could not access camera. Please verify permission settings.");
+    }
+}
+
+function stopCamera() {
+    isScanning = false;
+    laser.style.display = "none";
+    
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+    
+    if (scanInterval) {
+        clearInterval(scanInterval);
+    }
+    
+    scanStatus.innerText = "Scanner Paused";
+    scanStatus.className = "badge badge-info";
+    
+    btnToggle.innerHTML = "<i class='bx bx-play-circle'></i><span>Start Scanner</span>";
+    btnToggle.className = "btn btn-primary";
+    btnToggle.style.borderColor = "transparent";
+}
+
+function toggleScanner() {
+    if (isScanning) {
+        stopCamera();
+    } else {
+        startCamera();
+    }
+}
+
+function renderCanvas() {
+    if (!isScanning) return;
+    
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Draw crosshair alignment guide in the center
+        const size = Math.min(canvas.width, canvas.height) * 0.5;
+        const x = (canvas.width - size) / 2;
+        const y = (canvas.height - size) / 2;
+        
+        ctx.strokeStyle = "rgba(139, 92, 246, 0.4)";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(x, y, size, size);
+        
+        // Draw decorative corners
+        ctx.strokeStyle = "var(--accent-teal)";
+        ctx.lineWidth = 6;
+        
+        // Top-left corner
+        ctx.beginPath();
+        ctx.moveTo(x - 3, y + 20); ctx.lineTo(x - 3, y - 3); ctx.lineTo(x + 20, y - 3);
+        ctx.stroke();
+        
+        // Top-right corner
+        ctx.beginPath();
+        ctx.moveTo(x + size + 3, y + 20); ctx.lineTo(x + size + 3, y - 3); ctx.lineTo(x + size - 20, y - 3);
+        ctx.stroke();
+        
+        // Bottom-left corner
+        ctx.beginPath();
+        ctx.moveTo(x - 3, y + size - 20); ctx.lineTo(x - 3, y + size + 3); ctx.lineTo(x + 20, y + size + 3);
+        ctx.stroke();
+        
+        // Bottom-right corner
+        ctx.beginPath();
+        ctx.moveTo(x + size + 3, y + size - 20); ctx.lineTo(x + size + 3, y + size + 3); ctx.lineTo(x + size - 20, y + size + 3);
+        ctx.stroke();
+    }
+    requestAnimationFrame(renderCanvas);
+}
+
+function captureFrameAndScan() {
+    if (!isScanning) return;
+    
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        // Capture frame as Base64 JPEG
+        let dataURL = canvas.toDataURL('image/jpeg', 0.7);
+        
+        // POST to backend scan-frame endpoint
+        fetch("{{ url_for('inventory.scan_frame') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ image: dataURL })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Play feedback sound and freeze scanning
+                playBeep();
+                stopCamera();
+                scanStatus.innerText = "SKU DETECTED";
+                scanStatus.className = "badge badge-success";
+                
+                // Load details into workstation
+                document.getElementById('res-sku').innerText = data.product_id;
+                document.getElementById('res-name').innerText = data.product_name;
+                document.getElementById('res-qty').innerText = data.current_qty + " Units";
+                document.getElementById('res-shelf').innerText = data.shelf_id;
+                
+                // Bind form variables
+                document.getElementById('form-sku').value = data.product_id;
+                
+                // Show product panel, hide idle
+                document.getElementById('idle-panel').style.display = 'none';
+                document.getElementById('scanned-panel').style.display = 'block';
+            }
+        })
+        .catch(err => console.error("Scan API Error: ", err));
+    }
+}
+
+function resumeScanning() {
+    document.getElementById('scanned-panel').style.display = 'none';
+    document.getElementById('idle-panel').style.display = 'block';
+    startCamera();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}DWMS - Dashboard{% endblock %}
+
+{% block content %}
+<div class="header-container">
+    <div class="page-title">
+        <h1>Warehouse Dashboard</h1>
+        <p>Real-time analytics and inventory control metrics</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('inventory.scanner_page') }}" class="btn btn-primary">
+            <i class='bx bx-qr-scan'></i>
+            <span>Scan QR Code</span>
+        </a>
+    </div>
+</div>
+
+<!-- KPI Metrics Grid -->
+<div class="metrics-grid">
+    <!-- Total Products -->
+    <div class="glass-panel metric-card">
+        <div class="metric-details">
+            <p>Total Products</p>
+            <h3>{{ stats.total_products }}</h3>
+        </div>
+        <div class="metric-icon purple">
+            <i class='bx bx-package'></i>
+        </div>
+    </div>
+    
+    <!-- Total Stock -->
+    <div class="glass-panel metric-card">
+        <div class="metric-details">
+            <p>Total Stock Items</p>
+            <h3>{{ stats.total_stock }}</h3>
+        </div>
+        <div class="metric-icon teal">
+            <i class='bx bx-archive-in'></i>
+        </div>
+    </div>
+
+    <!-- Inventory Value -->
+    <div class="glass-panel metric-card">
+        <div class="metric-details">
+            <p>Inventory Value</p>
+            <h3>${{ "{:,.2f}".format(stats.total_value) }}</h3>
+        </div>
+        <div class="metric-icon success">
+            <i class='bx bx-dollar-circle'></i>
+        </div>
+    </div>
+
+    <!-- Low Stock Items -->
+    <div class="glass-panel metric-card">
+        <div class="metric-details">
+            <p>Low Stock Items</p>
+            <h3 style="color: {% if stats.low_stock_count > 0 %}var(--accent-danger){% else %}inherit{% endif %};">
+                {{ stats.low_stock_count }}
+            </h3>
+        </div>
+        <div class="metric-icon {% if stats.low_stock_count > 0 %}danger{% else %}purple{% endif %}">
+            <i class='bx bx-error-alt'></i>
+        </div>
+    </div>
+</div>
+
+<div class="content-grid">
+    <!-- Left Column: Recent Stock Movements -->
+    <div class="glass-panel">
+        <div class="panel-header">
+            <h2>Recent Stock Movements</h2>
+            <a href="{{ url_for('inventory.index') }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">View All</a>
+        </div>
+        <div class="panel-content">
+            {% if recent_transactions %}
+                <div class="table-responsive">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Product</th>
+                                <th>Type</th>
+                                <th>Quantity</th>
+                                <th>Operator</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in recent_transactions %}
+                                <tr>
+                                    <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ tx.date }}</td>
+                                    <td>
+                                        <div style="font-weight: 600;">{{ tx.product_name }}</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted);">{{ tx.product_id }}</div>
+                                    </td>
+                                    <td>
+                                        {% if tx.transaction_type == 'IN' %}
+                                            <span class="badge badge-success">IN</span>
+                                        {% elif tx.transaction_type == 'OUT' %}
+                                            <span class="badge badge-danger">OUT</span>
+                                        {% else %}
+                                            <span class="badge badge-warning">ADJUST</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="font-weight: 700;">{{ tx.quantity }}</td>
+                                    <td style="color: var(--text-secondary);">{{ tx.username }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 40px 0; color: var(--text-muted);">
+                    <i class='bx bx-notepad' style="font-size: 3rem; margin-bottom: 12px; display: block;"></i>
+                    <p>No recent inventory transactions logged.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Warehouse Zone Utilization & Alerts -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+        
+        <!-- Zone Occupancy Utilization -->
+        <div class="glass-panel">
+            <div class="panel-header">
+                <h2>Warehouse Zone Occupancy</h2>
+            </div>
+            <div class="panel-content" style="display: flex; flex-direction: column; gap: 20px;">
+                {% for zone in zone_utilization %}
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
+                            <span style="font-weight: 600;">{{ zone.zone }}</span>
+                            <span style="color: var(--text-secondary);">
+                                {{ zone.total_occupancy }} / {{ zone.total_capacity }} units ({{ zone.utilization_percentage }}%)
+                            </span>
+                        </div>
+                        <div style="width: 100%; height: 10px; background: rgba(255,255,255,0.05); border-radius: 9999px; overflow: hidden; border: 1px solid var(--border-color);">
+                            <div style="width: {{ zone.utilization_percentage }}%; height: 100%; 
+                                        background: linear-gradient(to right, 
+                                            {% if zone.utilization_percentage > 85 %}var(--accent-danger), var(--accent-danger){% elif zone.utilization_percentage > 60 %}var(--accent-warning), var(--accent-warning){% else %}var(--accent-teal), var(--accent-purple){% endif %});
+                                        border-radius: 9999px;">
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Low Stock Alerts -->
+        <div class="glass-panel">
+            <div class="panel-header">
+                <h2>Low Stock Alerts</h2>
+            </div>
+            <div class="panel-content" style="max-height: 280px; overflow-y: auto;">
+                {% if low_stock_items %}
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        {% for item in low_stock_items %}
+                            <div class="glass-panel" style="padding: 12px; display: flex; align-items: center; justify-content: space-between; border-color: rgba(244, 63, 94, 0.15); background: rgba(244, 63, 94, 0.02);">
+                                <div>
+                                    <div style="font-weight: 600; font-size: 0.9rem;">{{ item.product_name }}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Zone/Shelf: {{ item.shelf_zone or 'None' }} / {{ item.shelf_id or 'Unassigned' }}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span class="badge badge-danger" style="font-size: 0.8rem; padding: 6px 12px;">
+                                        {{ item.quantity }} in stock
+                                    </span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 20px 0; color: var(--text-muted);">
+                        <i class='bx bx-check-shield' style="font-size: 2.5rem; color: var(--accent-success); margin-bottom: 8px; display: block;"></i>
+                        <p>All products are sufficiently stocked.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
