@@ -1,3 +1,4 @@
+import sqlite3
 from database.db import get_db_connection
 from utils.qr_generator import generate_product_qr
 
@@ -30,7 +31,7 @@ class Product:
         return dict(row) if row else None
 
     @staticmethod
-    def create_product(product_id, name, category, qty, price, shelf_id, supplier_id):
+    def create_product(product_id, name, category, qty, price, shelf_id, supplier_id, user_id=1):
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
@@ -61,8 +62,8 @@ class Product:
             # Insert initial transaction log (IN)
             cursor.execute(
                 """INSERT INTO inventory_transactions (product_id, transaction_type, quantity, user_id)
-                   VALUES (?, 'IN', ?, 1);""", # Default Admin user ID = 1 for setup
-                (product_id, qty)
+                   VALUES (?, 'IN', ?, ?);""",
+                (product_id, qty, user_id or 1)
             )
 
             conn.commit()

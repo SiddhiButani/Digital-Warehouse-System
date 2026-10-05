@@ -63,11 +63,11 @@
                                                 <i class='bx bx-show'></i>
                                             </a>
                                             {% if session.get('user_role') in ['Admin', 'Manager'] %}
-                                                <a href="{{ url_for('products.edit_product', product_id=p.id) }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; border-color: rgba(139, 92, 246, 0.2); color: #a78bfa;" title="Edit Product">
+                                                <a href="{{ url_for('products.edit_product', product_id=p.id) }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; border-color: rgba(79, 70, 229, 0.3); color: var(--accent-purple);" title="Edit Product">
                                                     <i class='bx bx-edit-alt'></i>
                                                 </a>
                                                 <form action="{{ url_for('products.delete_product', product_id=p.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this product? All transaction history for this item will be removed.');" style="display: inline;">
-                                                    <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(244, 63, 94, 0.15); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.3);" title="Delete Product">
+                                                    <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.1); color: #b91c1c; border: 1px solid rgba(239, 68, 68, 0.3);" title="Delete Product">
                                                         <i class='bx bx-trash'></i>
                                                     </button>
                                                 </form>

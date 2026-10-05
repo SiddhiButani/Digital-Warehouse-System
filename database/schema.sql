@@ -40,7 +40,7 @@ CREATE TABLE products (
     category TEXT NOT NULL,
     quantity INTEGER NOT NULL DEFAULT 0 CHECK(quantity >= 0),
     unit_price REAL NOT NULL CHECK(unit_price >= 0.0),
-    qr_code_path TEXT NOT NULL,
+    qr_code_path TEXT NOT NULL, 
     shelf_id TEXT,
     supplier_id INTEGER,
     FOREIGN KEY(shelf_id) REFERENCES warehouse_shelves(shelf_id) ON DELETE SET NULL,

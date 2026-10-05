@@ -19,7 +19,7 @@
                 <div class="metric-icon purple" style="width: 48px; height: 48px; border-radius: 12px; font-size: 1.5rem;">
                     <i class='bx bx-cube'></i>
                 </div>
-                <h3 style="font-size: 1.2rem; color: white;">Inventory Balance Report</h3>
+                <h3 style="font-size: 1.2rem; color: var(--text-primary);">Inventory Balance Report</h3>
             </div>
             <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
                 Generates a snapshot of the current warehouse inventory levels. Includes item names, category tags, shelf assignments, cost valuations, and linked supplier info.
@@ -32,7 +32,7 @@
                 <span>Download Excel (.xlsx)</span>
             </a>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <a href="{{ url_for('reports.export_report', fmt='pdf', report_type='inventory') }}" class="btn btn-secondary" style="justify-content: center; border-color: rgba(244, 63, 94, 0.3); color: #fda4af;">
+                <a href="{{ url_for('reports.export_report', fmt='pdf', report_type='inventory') }}" class="btn btn-secondary" style="justify-content: center; border-color: rgba(239, 68, 68, 0.3); color: var(--accent-danger);">
                     <i class='bx bxs-file-pdf'></i>
                     <span>PDF</span>
                 </a>
@@ -51,7 +51,7 @@
                 <div class="metric-icon teal" style="width: 48px; height: 48px; border-radius: 12px; font-size: 1.5rem;">
                     <i class='bx bx-transfer-alt'></i>
                 </div>
-                <h3 style="font-size: 1.2rem; color: white;">Transaction Audit Trail</h3>
+                <h3 style="font-size: 1.2rem; color: var(--text-primary);">Transaction Audit Trail</h3>
             </div>
             <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
                 Generates a historical ledger logging every inventory movement. Includes dates, timestamps, SKU codes, adjustment types (IN/OUT/ADJUST), quantities, and operator names.
@@ -64,7 +64,7 @@
                 <span>Download Excel (.xlsx)</span>
             </a>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <a href="{{ url_for('reports.export_report', fmt='pdf', report_type='transactions') }}" class="btn btn-secondary" style="justify-content: center; border-color: rgba(244, 63, 94, 0.3); color: #fda4af;">
+                <a href="{{ url_for('reports.export_report', fmt='pdf', report_type='transactions') }}" class="btn btn-secondary" style="justify-content: center; border-color: rgba(239, 68, 68, 0.3); color: var(--accent-danger);">
                     <i class='bx bxs-file-pdf'></i>
                     <span>PDF</span>
                 </a>
@@ -83,7 +83,7 @@
                 <div class="metric-icon success" style="width: 48px; height: 48px; border-radius: 12px; font-size: 1.5rem;">
                     <i class='bx bxs-truck'></i>
                 </div>
-                <h3 style="font-size: 1.2rem; color: white;">Supplier Registry Report</h3>
+                <h3 style="font-size: 1.2rem; color: var(--text-primary);">Supplier Registry Report</h3>
             </div>
             <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
                 Generates a master list of all supplier partners. Includes vendor company names, key contacts, phone numbers, emails, and corporate warehouse locations.
@@ -96,7 +96,7 @@
                 <span>Download Excel (.xlsx)</span>
             </a>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <a href="{{ url_for('reports.export_report', fmt='pdf', report_type='suppliers') }}" class="btn btn-secondary" style="justify-content: center; border-color: rgba(244, 63, 94, 0.3); color: #fda4af;">
+                <a href="{{ url_for('reports.export_report', fmt='pdf', report_type='suppliers') }}" class="btn btn-secondary" style="justify-content: center; border-color: rgba(239, 68, 68, 0.3); color: var(--accent-danger);">
                     <i class='bx bxs-file-pdf'></i>
                     <span>PDF</span>
                 </a>

@@ -1,82 +1,65 @@
 {% extends "base.html" %}
 
-{% block title %}DWMS - {% if edit_mode %}Edit Product {{ product.id }}{% else %}Product {{ product.id }} Details{% endif %}{% endblock %}
+{% block title %}DWMS - Product {{ product.id }}{% endblock %}
 
 {% block content %}
 <div class="header-container">
     <div class="page-title">
-        <h1>
-            {% if edit_mode %}
-                Edit Product: {{ product.id }}
-            {% else %}
-                Product Details: {{ product.product_name }}
-            {% endif %}
-        </h1>
-        <p>
-            {% if edit_mode %}
-                Modify details and shelf allocations
-            {% else %}
-                View SKU, QR Code label, and logs
-            {% endif %}
-        </p>
+        <h1>Product Master Record</h1>
+        <p>SKU Details, Shelf Location, QR Sticker Generation, & Audit Logs</p>
     </div>
     <div class="header-actions">
         <a href="{{ url_for('products.index') }}" class="btn btn-secondary">
-            <i class='bx bx-arrow-back'></i>
-            <span>Back to Inventory</span>
+            <i class='bx bx-left-arrow-alt'></i>
+            <span>Back to Products</span>
         </a>
+        {% if session.get('user_role') in ['Admin', 'Manager'] %}
+            <a href="{{ url_for('products.edit_product', product_id=product.id) }}" class="btn btn-primary">
+                <i class='bx bx-edit'></i>
+                <span>Edit Product</span>
+            </a>
+        {% endif %}
     </div>
 </div>
 
-{% if not edit_mode %}
-    <!-- VIEW MODE -->
-    <div class="content-grid">
-        <!-- Product Profile Card -->
-        <div class="glass-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
-            <div class="panel-header">
-                <h2>Product Information</h2>
-                {% if session.get('user_role') in ['Admin', 'Manager'] %}
-                    <a href="{{ url_for('products.edit_product', product_id=product.id) }}" class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem;">
-                        <i class='bx bx-edit-alt'></i>
-                        <span>Edit</span>
-                    </a>
-                {% endif %}
+{% if not editing_mode %}
+    <!-- View Product Details Panel -->
+    <div style="display: flex; flex-direction: column; gap: 24px; margin-bottom: 32px;">
+        
+        <!-- Header Info Card -->
+        <div class="glass-panel" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+                <div style="flex-grow: 1;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span class="badge badge-info" style="font-family: monospace; font-size: 0.9rem; padding: 6px 12px;">{{ product.id }}</span>
+                        <span class="badge badge-warning">{{ product.category }}</span>
+                    </div>
+                    <h2 style="font-size: 1.8rem; font-weight: 700;">{{ product.product_name }}</h2>
+                </div>
+
+                <!-- Price & Stock Callouts -->
+                <div style="display: flex; gap: 24px;">
+                    <div style="text-align: right;">
+                        <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Unit Valuation</span>
+                        <h3 style="font-size: 1.5rem; color: var(--accent-teal);">${{ "{:,.2f}".format(product.unit_price) }}</h3>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Total Stock</span>
+                        <h3 style="font-size: 1.5rem; color: {% if product.quantity <= 10 %}var(--accent-danger){% else %}var(--accent-success){% endif %};">
+                            {{ product.quantity }} Units
+                        </h3>
+                    </div>
+                </div>
             </div>
-            
-            <div class="panel-content" style="display: flex; gap: 24px;">
-                <!-- Details List -->
-                <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 16px;">
+
+            <hr style="border: none; border-top: 1px solid var(--border-color); margin: 20px 0;">
+
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                <div style="display: flex; gap: 32px;">
                     <div>
-                        <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">SKU Code</span>
-                        <h3 style="font-size: 1.5rem; font-family: monospace; color: var(--accent-purple);">{{ product.id }}</h3>
-                    </div>
-                    <div>
-                        <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Name</span>
-                        <p style="font-size: 1.1rem; font-weight: 600;">{{ product.product_name }}</p>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                        <div>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Category</span>
-                            <p style="font-weight: 500;">{{ product.category }}</p>
-                        </div>
-                        <div>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Unit Price</span>
-                            <p style="font-weight: 600; color: var(--accent-success);">${{ "{:,.2f}".format(product.unit_price) }}</p>
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                        <div>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Current Stock</span>
-                            <p>
-                                {% if product.quantity <= 10 %}
-                                    <span class="badge badge-danger" style="font-weight: 700;">{{ product.quantity }} Units</span>
-                                {% else %}
-                                    <span class="badge badge-success" style="font-weight: 700;">{{ product.quantity }} Units</span>
-                                {% endif %}
-                            </p>
-                        </div>
-                        <div>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Shelf Location</span>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Shelf Location</span>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                            <i class='bx bx-map-pin' style="color: var(--accent-purple);"></i>
                             <p style="font-weight: 600;">
                                 {{ product.shelf_id or 'Unassigned' }}
                                 {% if product.shelf_zone %}
@@ -92,12 +75,12 @@
                 </div>
 
                 <!-- QR Code & Printable Sticker Card -->
-                <div class="glass-panel" style="width: 220px; padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; border-color: rgba(255, 255, 255, 0.05); background: rgba(0,0,0,0.15);">
-                    <div style="background: white; padding: 12px; border-radius: 12px; display: inline-block;">
+                <div class="glass-panel" style="width: 220px; padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; border-color: rgba(0, 0, 0, 0.08); background: #f8fafc;">
+                    <div style="background: white; padding: 12px; border-radius: 12px; display: inline-block; border: 1px solid var(--border-color);">
                         <img src="{{ url_for('static', filename=product.qr_code_path) }}" alt="QR Code" style="width: 140px; height: 140px; display: block;">
                     </div>
                     <div style="margin-top: 12px;">
-                        <span style="font-family: monospace; font-size: 0.8rem; font-weight: 700; color: white;">{{ product.id }}</span>
+                        <span style="font-family: monospace; font-size: 0.8rem; font-weight: 700; color: var(--text-primary);">{{ product.id }}</span>
                         <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">QR Code Label</p>
                     </div>
                     <button onclick="window.print();" class="btn btn-secondary" style="width: 100%; justify-content: center; margin-top: 14px; padding: 8px; font-size: 0.8rem; border-color: var(--accent-purple);">
@@ -120,15 +103,17 @@
                             <thead>
                                 <tr>
                                     <th>Timestamp</th>
+                                    <th>Tx ID</th>
                                     <th>Type</th>
                                     <th>Quantity</th>
-                                    <th>User</th>
+                                    <th>Operator</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for tx in transactions %}
                                     <tr>
                                         <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ tx.date }}</td>
+                                        <td style="font-family: monospace; font-size: 0.85rem; color: var(--text-muted);">#{{ tx.id }}</td>
                                         <td>
                                             {% if tx.transaction_type == 'IN' %}
                                                 <span class="badge badge-success">IN</span>
@@ -147,16 +132,15 @@
                     </div>
                 {% else %}
                     <div style="text-align: center; padding: 40px 0; color: var(--text-muted);">
-                        <i class='bx bx-history' style="font-size: 2.5rem; margin-bottom: 8px; display: block;"></i>
-                        <p>No transaction history logged for this product.</p>
+                        <i class='bx bx-receipt' style="font-size: 3rem; margin-bottom: 8px; display: block;"></i>
+                        <p>No transactions logged for this product yet.</p>
                     </div>
                 {% endif %}
             </div>
         </div>
     </div>
-
 {% else %}
-    <!-- EDIT MODE -->
+    <!-- Edit Form View -->
     <div style="max-width: 600px; margin: 0 auto;">
         <div class="glass-panel">
             <div class="panel-header">
@@ -166,7 +150,7 @@
                 <form action="{{ url_for('products.edit_product', product_id=product.id) }}" method="POST">
                     <div class="form-group">
                         <label class="form-label">Product ID (SKU - Cannot change)</label>
-                        <input type="text" class="form-control" value="{{ product.id }}" disabled style="font-family: monospace; color: var(--text-secondary); cursor: not-allowed; background: rgba(0,0,0,0.3);">
+                        <input type="text" class="form-control" value="{{ product.id }}" disabled style="font-family: monospace; color: var(--text-secondary); cursor: not-allowed; background: #f1f5f9;">
                     </div>
 
                     <div class="form-group">
