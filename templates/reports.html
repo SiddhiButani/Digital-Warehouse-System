@@ -1,112 +1,72 @@
 {% extends "base.html" %}
 
-{% block title %}DWMS - Report Export Center{% endblock %}
+{% block title %}Reports - Digital Warehouse System{% endblock %}
 
 {% block content %}
-<div class="header-container">
-    <div class="page-title">
+<div class="page-header">
+    <div class="page-header-title">
         <h1>Reports Export Center</h1>
-        <p>Generate and download verified CSV ledger files, formatted Excel spreadsheets, and print-ready PDF audits</p>
+        <p>Download warehouse inventory snapshots, transaction logs, and supplier directories</p>
     </div>
 </div>
 
-<div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
-    
-    <!-- Report Card 1: Inventory Balance -->
-    <div class="glass-panel" style="display: flex; flex-direction: column; justify-content: space-between; padding: 24px; min-height: 280px;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
-                <div class="metric-icon purple" style="width: 48px; height: 48px; border-radius: 12px; font-size: 1.5rem;">
-                    <i class='bx bx-cube'></i>
-                </div>
-                <h3 style="font-size: 1.2rem; color: var(--text-primary);">Inventory Balance Report</h3>
-            </div>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
-                Generates a snapshot of the current warehouse inventory levels. Includes item names, category tags, shelf assignments, cost valuations, and linked supplier info.
-            </p>
-        </div>
-        
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 24px;">
-            <a href="{{ url_for('reports.export_report', fmt='excel', report_type='inventory') }}" class="btn btn-teal" style="justify-content: center;">
-                <i class='bx bx-spreadsheet'></i>
-                <span>Download Excel (.xlsx)</span>
-            </a>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <a href="{{ url_for('reports.export_report', fmt='pdf', report_type='inventory') }}" class="btn btn-secondary" style="justify-content: center; border-color: rgba(239, 68, 68, 0.3); color: var(--accent-danger);">
-                    <i class='bx bxs-file-pdf'></i>
-                    <span>PDF</span>
-                </a>
-                <a href="{{ url_for('reports.export_report', fmt='csv', report_type='inventory') }}" class="btn btn-secondary" style="justify-content: center;">
-                    <i class='bx bx-file'></i>
-                    <span>CSV</span>
-                </a>
-            </div>
+<div class="panel">
+    <div class="panel-header">
+        <h2>Available Reports</h2>
+    </div>
+    <div class="panel-body" style="padding: 0;">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 200px;">Report Name</th>
+                        <th>Contents & Scope</th>
+                        <th style="width: 240px;">Export Formats</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Inventory Balance</strong></td>
+                        <td class="text-sm text-muted">
+                            Complete snapshot of on-hand inventory, SKU codes, categories, shelf locations, unit valuations, and supplier references.
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 6px;">
+                                <a href="{{ url_for('reports.export_report', fmt='excel', report_type='inventory') }}" class="btn btn-sm btn-primary">Export Excel</a>
+                                <a href="{{ url_for('reports.export_report', fmt='csv', report_type='inventory') }}" class="btn btn-sm">CSV</a>
+                                <a href="{{ url_for('reports.export_report', fmt='pdf', report_type='inventory') }}" class="btn btn-sm">PDF</a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Transaction Audit Trail</strong></td>
+                        <td class="text-sm text-muted">
+                            Historical ledger of all inventory movements including timestamps, product SKUs, movement types (IN, OUT, ADJUST), quantities, and operators.
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 6px;">
+                                <a href="{{ url_for('reports.export_report', fmt='excel', report_type='transactions') }}" class="btn btn-sm btn-primary">Export Excel</a>
+                                <a href="{{ url_for('reports.export_report', fmt='csv', report_type='transactions') }}" class="btn btn-sm">CSV</a>
+                                <a href="{{ url_for('reports.export_report', fmt='pdf', report_type='transactions') }}" class="btn btn-sm">PDF</a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Supplier Registry</strong></td>
+                        <td class="text-sm text-muted">
+                            Master directory of approved vendors with primary contacts, email addresses, phone numbers, and physical warehouse locations.
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 6px;">
+                                <a href="{{ url_for('reports.export_report', fmt='excel', report_type='suppliers') }}" class="btn btn-sm btn-primary">Export Excel</a>
+                                <a href="{{ url_for('reports.export_report', fmt='csv', report_type='suppliers') }}" class="btn btn-sm">CSV</a>
+                                <a href="{{ url_for('reports.export_report', fmt='pdf', report_type='suppliers') }}" class="btn btn-sm">PDF</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
-
-    <!-- Report Card 2: Transaction Audit Trail -->
-    <div class="glass-panel" style="display: flex; flex-direction: column; justify-content: space-between; padding: 24px; min-height: 280px;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
-                <div class="metric-icon teal" style="width: 48px; height: 48px; border-radius: 12px; font-size: 1.5rem;">
-                    <i class='bx bx-transfer-alt'></i>
-                </div>
-                <h3 style="font-size: 1.2rem; color: var(--text-primary);">Transaction Audit Trail</h3>
-            </div>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
-                Generates a historical ledger logging every inventory movement. Includes dates, timestamps, SKU codes, adjustment types (IN/OUT/ADJUST), quantities, and operator names.
-            </p>
-        </div>
-        
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 24px;">
-            <a href="{{ url_for('reports.export_report', fmt='excel', report_type='transactions') }}" class="btn btn-teal" style="justify-content: center;">
-                <i class='bx bx-spreadsheet'></i>
-                <span>Download Excel (.xlsx)</span>
-            </a>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <a href="{{ url_for('reports.export_report', fmt='pdf', report_type='transactions') }}" class="btn btn-secondary" style="justify-content: center; border-color: rgba(239, 68, 68, 0.3); color: var(--accent-danger);">
-                    <i class='bx bxs-file-pdf'></i>
-                    <span>PDF</span>
-                </a>
-                <a href="{{ url_for('reports.export_report', fmt='csv', report_type='transactions') }}" class="btn btn-secondary" style="justify-content: center;">
-                    <i class='bx bx-file'></i>
-                    <span>CSV</span>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Report Card 3: Suppliers Directory -->
-    <div class="glass-panel" style="display: flex; flex-direction: column; justify-content: space-between; padding: 24px; min-height: 280px;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
-                <div class="metric-icon success" style="width: 48px; height: 48px; border-radius: 12px; font-size: 1.5rem;">
-                    <i class='bx bxs-truck'></i>
-                </div>
-                <h3 style="font-size: 1.2rem; color: var(--text-primary);">Supplier Registry Report</h3>
-            </div>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
-                Generates a master list of all supplier partners. Includes vendor company names, key contacts, phone numbers, emails, and corporate warehouse locations.
-            </p>
-        </div>
-        
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 24px;">
-            <a href="{{ url_for('reports.export_report', fmt='excel', report_type='suppliers') }}" class="btn btn-teal" style="justify-content: center;">
-                <i class='bx bx-spreadsheet'></i>
-                <span>Download Excel (.xlsx)</span>
-            </a>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <a href="{{ url_for('reports.export_report', fmt='pdf', report_type='suppliers') }}" class="btn btn-secondary" style="justify-content: center; border-color: rgba(239, 68, 68, 0.3); color: var(--accent-danger);">
-                    <i class='bx bxs-file-pdf'></i>
-                    <span>PDF</span>
-                </a>
-                <a href="{{ url_for('reports.export_report', fmt='csv', report_type='suppliers') }}" class="btn btn-secondary" style="justify-content: center;">
-                    <i class='bx bx-file'></i>
-                    <span>CSV</span>
-                </a>
-            </div>
-        </div>
-    </div>
-
 </div>
 {% endblock %}

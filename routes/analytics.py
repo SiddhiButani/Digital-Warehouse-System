@@ -26,12 +26,12 @@ def fig_to_base64(fig):
     return f"data:image/png;base64,{img_str}"
 
 def apply_chart_style(ax, title=""):
-    """Applies custom light-theme dashboard styles to a Matplotlib axes object."""
-    ax.set_title(title, color='#0f172a', fontsize=14, pad=15, fontweight='bold', fontname='sans-serif')
+    """Applies clean minimalist styles to a Matplotlib axes object."""
+    ax.set_title(title, color='#1c1917', fontsize=12, pad=12, fontweight='bold', fontname='sans-serif')
     ax.set_facecolor('none')
-    ax.tick_params(colors='#475569', labelsize=9)
-    ax.xaxis.label.set_color('#475569')
-    ax.yaxis.label.set_color('#475569')
+    ax.tick_params(colors='#78716c', labelsize=9)
+    ax.xaxis.label.set_color('#78716c')
+    ax.yaxis.label.set_color('#78716c')
     
     # Hide top and right spines
     for spine in ['top', 'right']:
@@ -39,19 +39,19 @@ def apply_chart_style(ax, title=""):
     
     # Style remaining spines
     for spine in ['left', 'bottom']:
-        ax.spines[spine].set_color('#cbd5e1')
+        ax.spines[spine].set_color('#e7e5e4')
         ax.spines[spine].set_linewidth(1)
         
-    ax.grid(True, linestyle=':', alpha=0.3, color='#94a3b8')
+    ax.grid(True, linestyle=':', alpha=0.3, color='#d6d3d1')
 
 @analytics_bp.route('/')
 @login_required()
 def index():
     # Setup light plot theme parameters globally
-    plt.rcParams['text.color'] = '#0f172a'
-    plt.rcParams['axes.labelcolor'] = '#475569'
-    plt.rcParams['xtick.color'] = '#475569'
-    plt.rcParams['ytick.color'] = '#475569'
+    plt.rcParams['text.color'] = '#1c1917'
+    plt.rcParams['axes.labelcolor'] = '#78716c'
+    plt.rcParams['xtick.color'] = '#78716c'
+    plt.rcParams['ytick.color'] = '#78716c'
     plt.rcParams['font.family'] = 'sans-serif'
 
     conn = get_db_connection()
@@ -65,15 +65,14 @@ def index():
         df_mv = pd.DataFrame(movement_data)
         
         fig, ax = plt.subplots(figsize=(7, 3.5))
-        ax.plot(df_mv['tx_date'], df_mv['total_in'], marker='o', linewidth=2.5, color='#10b981', label='Stock In')
-        ax.plot(df_mv['tx_date'], df_mv['total_out'], marker='s', linewidth=2.5, color='#ef4444', label='Stock Out')
+        ax.plot(df_mv['tx_date'], df_mv['total_in'], marker='o', linewidth=2, color='#166534', label='Stock In')
+        ax.plot(df_mv['tx_date'], df_mv['total_out'], marker='s', linewidth=2, color='#991b1b', label='Stock Out')
         
         apply_chart_style(ax, "15-Day Stock Movement Traffic")
         ax.set_xlabel("Date")
         ax.set_ylabel("Quantity")
-        # Rotate dates slightly for neatness
         plt.xticks(rotation=30, ha='right')
-        ax.legend(facecolor='#ffffff', edgecolor='#e2e8f0', loc='upper left')
+        ax.legend(facecolor='#ffffff', edgecolor='#e7e5e4', loc='upper left', fontsize=9)
         
         chart_movement = fig_to_base64(fig)
 
@@ -87,27 +86,24 @@ def index():
         df_cat = pd.DataFrame([dict(r) for r in cat_data])
         
         fig, ax = plt.subplots(figsize=(6, 3.5))
-        # Custom palette colors matching light dashboard
-        colors = ['#4f46e5', '#0d9488', '#10b981', '#f59e0b', '#ec4899', '#2563eb']
+        colors = ['#0f766e', '#78716c', '#047857', '#d97706', '#57534e', '#0369a1']
         
-        # Donut Chart
         wedges, texts, autotexts = ax.pie(
             df_cat['stock_qty'], 
             labels=df_cat['category'], 
             autopct='%1.1f%%', 
             startangle=140, 
             colors=colors[:len(df_cat)],
-            textprops={'color': '#0f172a'},
-            wedgeprops=dict(width=0.4, edgecolor='#ffffff', linewidth=1.5) # Ring width
+            textprops={'color': '#1c1917', 'fontsize': 9},
+            wedgeprops=dict(width=0.45, edgecolor='#ffffff', linewidth=1)
         )
         
-        # Customize autotexts (inside slices)
         for autotext in autotexts:
             autotext.set_color('#ffffff')
             autotext.set_weight('bold')
-            autotext.set_fontsize(8.5)
+            autotext.set_fontsize(8)
             
-        ax.set_title("Stock Quantity Category Share", color='#0f172a', fontsize=14, pad=15, fontweight='bold')
+        ax.set_title("Category Share of Stock", color='#1c1917', fontsize=12, pad=12, fontweight='bold')
         chart_category = fig_to_base64(fig)
 
     # ----------------------------------------------------
@@ -122,14 +118,14 @@ def index():
         x_indices = np.arange(len(df_zone['zone']))
         width = 0.35
         
-        ax.bar(x_indices - width/2, df_zone['total_occupancy'], width, label='Current Occupancy', color='#0d9488', edgecolor='none')
-        ax.bar(x_indices + width/2, df_zone['total_capacity'], width, label='Total Capacity', color='#e2e8f0', edgecolor='#cbd5e1', linewidth=1)
+        ax.bar(x_indices - width/2, df_zone['total_occupancy'], width, label='Occupancy', color='#0f766e', edgecolor='none')
+        ax.bar(x_indices + width/2, df_zone['total_capacity'], width, label='Total Capacity', color='#e7e5e4', edgecolor='#d6d3d1', linewidth=1)
         
-        apply_chart_style(ax, "Warehouse Zone Load & Limits")
-        ax.set_ylabel("Quantity Units")
+        apply_chart_style(ax, "Zone Capacity & Occupancy")
+        ax.set_ylabel("Units")
         ax.set_xticks(x_indices)
         ax.set_xticklabels(df_zone['zone'])
-        ax.legend(facecolor='#ffffff', edgecolor='#e2e8f0')
+        ax.legend(facecolor='#ffffff', edgecolor='#e7e5e4', fontsize=9)
         
         chart_zone = fig_to_base64(fig)
 
@@ -142,17 +138,15 @@ def index():
         df_fast = pd.DataFrame(fast_moving)
         
         fig, ax = plt.subplots(figsize=(6, 3.5))
-        # Horizontal bars
-        bars = ax.barh(df_fast['product_name'], df_fast['total_sold'], color='#4f46e5', edgecolor='none')
+        bars = ax.barh(df_fast['product_name'], df_fast['total_sold'], color='#0f766e', edgecolor='none')
         
-        apply_chart_style(ax, "Top 5 Fast-Moving Items")
+        apply_chart_style(ax, "Top 5 High-Velocity Products")
         ax.set_xlabel("Units Shipped (OUT)")
         
-        # Add labels to the ends of the bars
         for bar in bars:
             width = bar.get_width()
             ax.text(width + 0.5, bar.get_y() + bar.get_height()/2, f'{int(width)}', 
-                    va='center', ha='left', color='#0f172a', fontweight='bold', fontsize=9)
+                    va='center', ha='left', color='#1c1917', fontweight='bold', fontsize=9)
             
         chart_fast = fig_to_base64(fig)
 

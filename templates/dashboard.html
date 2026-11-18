@@ -1,81 +1,50 @@
 {% extends "base.html" %}
 
-{% block title %}DWMS - Dashboard{% endblock %}
+{% block title %}Dashboard - Digital Warehouse System{% endblock %}
 
 {% block content %}
-<div class="header-container">
-    <div class="page-title">
+<div class="page-header">
+    <div class="page-header-title">
         <h1>Warehouse Dashboard</h1>
-        <p>Real-time analytics and inventory control metrics</p>
+        <p>Operational summary, recent inventory movements, and capacity status</p>
     </div>
-    <div class="header-actions">
-        <a href="{{ url_for('inventory.scanner_page') }}" class="btn btn-primary">
-            <i class='bx bx-qr-scan'></i>
-            <span>Scan QR Code</span>
-        </a>
+    <div class="page-actions">
+        <a href="{{ url_for('inventory.scanner_page') }}" class="btn btn-primary">Scan QR code</a>
     </div>
 </div>
 
-<!-- KPI Metrics Grid -->
-<div class="metrics-grid">
-    <!-- Total Products -->
-    <div class="glass-panel metric-card">
-        <div class="metric-details">
-            <p>Total Products</p>
-            <h3>{{ stats.total_products }}</h3>
-        </div>
-        <div class="metric-icon purple">
-            <i class='bx bx-package'></i>
-        </div>
+<div class="stats-row">
+    <div class="stat-box">
+        <div class="stat-label">Total Products</div>
+        <div class="stat-value">{{ stats.total_products }}</div>
     </div>
-    
-    <!-- Total Stock -->
-    <div class="glass-panel metric-card">
-        <div class="metric-details">
-            <p>Total Stock Items</p>
-            <h3>{{ stats.total_stock }}</h3>
-        </div>
-        <div class="metric-icon teal">
-            <i class='bx bx-archive-in'></i>
-        </div>
+    <div class="stat-box">
+        <div class="stat-label">Units in Stock</div>
+        <div class="stat-value">{{ stats.total_stock }}</div>
     </div>
-
-    <!-- Inventory Value -->
-    <div class="glass-panel metric-card">
-        <div class="metric-details">
-            <p>Inventory Value</p>
-            <h3>${{ "{:,.2f}".format(stats.total_value) }}</h3>
-        </div>
-        <div class="metric-icon success">
-            <i class='bx bx-dollar-circle'></i>
-        </div>
+    <div class="stat-box">
+        <div class="stat-label">Inventory Valuation</div>
+        <div class="stat-value">${{ "{:,.2f}".format(stats.total_value) }}</div>
     </div>
-
-    <!-- Low Stock Items -->
-    <div class="glass-panel metric-card">
-        <div class="metric-details">
-            <p>Low Stock Items</p>
-            <h3 style="color: {% if stats.low_stock_count > 0 %}var(--accent-danger){% else %}inherit{% endif %};">
-                {{ stats.low_stock_count }}
-            </h3>
-        </div>
-        <div class="metric-icon {% if stats.low_stock_count > 0 %}danger{% else %}purple{% endif %}">
-            <i class='bx bx-error-alt'></i>
+    <div class="stat-box">
+        <div class="stat-label">Low Stock Items</div>
+        <div class="stat-value {% if stats.low_stock_count > 0 %}danger{% endif %}">
+            {{ stats.low_stock_count }}
         </div>
     </div>
 </div>
 
-<div class="content-grid">
+<div class="layout-split">
     <!-- Left Column: Recent Stock Movements -->
-    <div class="glass-panel">
+    <div class="panel">
         <div class="panel-header">
             <h2>Recent Stock Movements</h2>
-            <a href="{{ url_for('inventory.index') }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">View All</a>
+            <a href="{{ url_for('inventory.index') }}" class="btn btn-sm">View all</a>
         </div>
-        <div class="panel-content">
+        <div class="panel-body" style="padding: 0;">
             {% if recent_transactions %}
-                <div class="table-responsive">
-                    <table class="custom-table">
+                <div class="table-wrap">
+                    <table>
                         <thead>
                             <tr>
                                 <th>Timestamp</th>
@@ -88,91 +57,97 @@
                         <tbody>
                             {% for tx in recent_transactions %}
                                 <tr>
-                                    <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ tx.date }}</td>
+                                    <td class="mono text-muted">{{ tx.date }}</td>
                                     <td>
-                                        <div style="font-weight: 600;">{{ tx.product_name }}</div>
-                                        <div style="font-size: 0.75rem; color: var(--text-muted);">{{ tx.product_id }}</div>
+                                        <div><strong>{{ tx.product_name }}</strong></div>
+                                        <div class="mono text-muted text-sm">{{ tx.product_id }}</div>
                                     </td>
                                     <td>
                                         {% if tx.transaction_type == 'IN' %}
-                                            <span class="badge badge-success">IN</span>
+                                            <span class="badge badge-in">IN</span>
                                         {% elif tx.transaction_type == 'OUT' %}
-                                            <span class="badge badge-danger">OUT</span>
+                                            <span class="badge badge-out">OUT</span>
                                         {% else %}
-                                            <span class="badge badge-warning">ADJUST</span>
+                                            <span class="badge badge-adjust">ADJUST</span>
                                         {% endif %}
                                     </td>
-                                    <td style="font-weight: 700;">{{ tx.quantity }}</td>
-                                    <td style="color: var(--text-secondary);">{{ tx.username }}</td>
+                                    <td class="mono"><strong>{{ tx.quantity }}</strong></td>
+                                    <td class="text-muted">{{ tx.username }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             {% else %}
-                <div style="text-align: center; padding: 40px 0; color: var(--text-muted);">
-                    <i class='bx bx-notepad' style="font-size: 3rem; margin-bottom: 12px; display: block;"></i>
-                    <p>No recent inventory transactions logged.</p>
+                <div class="empty-state">
+                    No transactions recorded yet.
                 </div>
             {% endif %}
         </div>
     </div>
 
-    <!-- Right Column: Warehouse Zone Utilization & Alerts -->
-    <div style="display: flex; flex-direction: column; gap: 24px;">
-        
-        <!-- Zone Occupancy Utilization -->
-        <div class="glass-panel">
+    <!-- Right Column: Warehouse Zone Occupancy & Low Stock Alerts -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Zone Occupancy -->
+        <div class="panel">
             <div class="panel-header">
-                <h2>Warehouse Zone Occupancy</h2>
+                <h2>Zone Storage Capacity</h2>
             </div>
-            <div class="panel-content" style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="panel-body" style="display: flex; flex-direction: column; gap: 14px;">
                 {% for zone in zone_utilization %}
                     <div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
-                            <span style="font-weight: 600;">{{ zone.zone }}</span>
-                            <span style="color: var(--text-secondary);">
-                                {{ zone.total_occupancy }} / {{ zone.total_capacity }} units ({{ zone.utilization_percentage }}%)
-                            </span>
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                            <span><strong>{{ zone.zone }}</strong></span>
+                            <span class="text-muted">{{ zone.total_occupancy }} / {{ zone.total_capacity }} units ({{ zone.utilization_percentage }}%)</span>
                         </div>
-                        <div style="width: 100%; height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid var(--border-color);">
-                            <div style="width: {{ zone.utilization_percentage }}%; height: 100%; 
-                                        background: linear-gradient(to right, 
-                                            {% if zone.utilization_percentage > 85 %}var(--accent-danger), var(--accent-danger){% elif zone.utilization_percentage > 60 %}var(--accent-warning), var(--accent-warning){% else %}var(--accent-teal), var(--accent-purple){% endif %});
-                                        border-radius: 9999px;">
-                            </div>
+                        <div class="bar-track">
+                            <div class="bar-fill {% if zone.utilization_percentage > 85 %}danger{% elif zone.utilization_percentage > 60 %}warning{% endif %}" style="width: {{ zone.utilization_percentage }}%;"></div>
                         </div>
                     </div>
                 {% endfor %}
             </div>
         </div>
 
-        <!-- Low Stock Alerts -->
-        <div class="glass-panel">
+        <!-- Low Stock Items -->
+        <div class="panel">
             <div class="panel-header">
                 <h2>Low Stock Alerts</h2>
-            </div>
-            <div class="panel-content" style="max-height: 280px; overflow-y: auto;">
                 {% if low_stock_items %}
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                        {% for item in low_stock_items %}
-                            <div class="glass-panel" style="padding: 12px; display: flex; align-items: center; justify-content: space-between; border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.04);">
-                                <div>
-                                    <div style="font-weight: 600; font-size: 0.9rem;">{{ item.product_name }}</div>
-                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Zone/Shelf: {{ item.shelf_zone or 'None' }} / {{ item.shelf_id or 'Unassigned' }}</div>
-                                </div>
-                                <div style="text-align: right;">
-                                    <span class="badge badge-danger" style="font-size: 0.8rem; padding: 6px 12px;">
-                                        {{ item.quantity }} in stock
-                                    </span>
-                                </div>
-                            </div>
-                        {% endfor %}
+                    <span class="badge badge-danger">{{ low_stock_items | length }} flagged</span>
+                {% endif %}
+            </div>
+            <div class="panel-body" style="padding: 0;">
+                {% if low_stock_items %}
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Location</th>
+                                    <th>Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in low_stock_items %}
+                                    <tr>
+                                        <td>
+                                            <div><strong>{{ item.product_name }}</strong></div>
+                                            <div class="mono text-muted text-sm">{{ item.id }}</div>
+                                        </td>
+                                        <td class="text-sm text-muted">
+                                            {{ item.shelf_zone or 'Zone -' }} / {{ item.shelf_id or 'Unassigned' }}
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-low">{{ item.quantity }} left</span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 {% else %}
-                    <div style="text-align: center; padding: 20px 0; color: var(--text-muted);">
-                        <i class='bx bx-check-shield' style="font-size: 2.5rem; color: var(--accent-success); margin-bottom: 8px; display: block;"></i>
-                        <p>All products are sufficiently stocked.</p>
+                    <div class="empty-state" style="padding: 20px 16px;">
+                        All inventory items are currently above the reorder threshold.
                     </div>
                 {% endif %}
             </div>

@@ -1,116 +1,110 @@
 {% extends "base.html" %}
 
-{% block title %}DWMS - Stock Movements & Adjustments{% endblock %}
+{% block title %}Stock Movements - Digital Warehouse System{% endblock %}
 
 {% block content %}
-<div class="header-container">
-    <div class="page-title">
-        <h1>Stock Movement Logs</h1>
-        <p>Monitor warehouse traffic and manually adjust SKU inventory counts</p>
+<div class="page-header">
+    <div class="page-header-title">
+        <h1>Stock Movement Ledger</h1>
+        <p>Real-time audit log of warehouse transactions and manual inventory adjustments</p>
+    </div>
+    <div class="page-actions">
+        <span class="text-sm text-muted">{{ transactions | length }} total ledger entries</span>
     </div>
 </div>
 
-<div class="content-grid">
+<div class="layout-split">
     <!-- Left Column: Transaction Log Table -->
-    <div class="glass-panel">
+    <div class="panel">
         <div class="panel-header">
-            <h2>Transaction Ledger</h2>
-            <span class="badge badge-info">{{ transactions | length }} History Log Entries</span>
+            <h2>Transaction History</h2>
         </div>
-        <div class="panel-content">
+        <div class="panel-body" style="padding: 0;">
             {% if transactions %}
-                <div class="table-responsive">
-                    <table class="custom-table">
+                <div class="table-wrap">
+                    <table>
                         <thead>
                             <tr>
                                 <th>Timestamp</th>
                                 <th>Tx ID</th>
-                                <th>Product SKU & Name</th>
+                                <th>Product & SKU</th>
                                 <th>Type</th>
-                                <th>Amount</th>
+                                <th>Quantity</th>
                                 <th>Operator</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for tx in transactions %}
                                 <tr>
-                                    <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ tx.date }}</td>
-                                    <td style="font-family: monospace; font-size: 0.85rem; color: var(--text-muted);">#{{ tx.id }}</td>
+                                    <td class="mono text-muted text-sm">{{ tx.date }}</td>
+                                    <td class="mono text-muted text-sm">#{{ tx.id }}</td>
                                     <td>
-                                        <div style="font-weight: 600;">{{ tx.product_name }}</div>
-                                        <div style="font-size: 0.75rem; color: var(--text-secondary); font-family: monospace;">{{ tx.product_id }}</div>
+                                        <div><strong>{{ tx.product_name }}</strong></div>
+                                        <div class="mono text-muted text-sm">{{ tx.product_id }}</div>
                                     </td>
                                     <td>
                                         {% if tx.transaction_type == 'IN' %}
-                                            <span class="badge badge-success">IN</span>
+                                            <span class="badge badge-in">IN</span>
                                         {% elif tx.transaction_type == 'OUT' %}
-                                            <span class="badge badge-danger">OUT</span>
+                                            <span class="badge badge-out">OUT</span>
                                         {% else %}
-                                            <span class="badge badge-warning">ADJUST</span>
+                                            <span class="badge badge-adjust">ADJUST</span>
                                         {% endif %}
                                     </td>
-                                    <td style="font-weight: 700;">{{ tx.quantity }}</td>
-                                    <td style="color: var(--text-secondary);">{{ tx.username }}</td>
+                                    <td class="mono"><strong>{{ tx.quantity }}</strong></td>
+                                    <td class="text-muted">{{ tx.username }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             {% else %}
-                <div style="text-align: center; padding: 60px 0; color: var(--text-muted);">
-                    <i class='bx bx-receipt' style="font-size: 4rem; margin-bottom: 12px; display: block;"></i>
-                    <p>No inventory movements recorded yet.</p>
+                <div class="empty-state">
+                    No inventory movements recorded yet.
                 </div>
             {% endif %}
         </div>
     </div>
 
     <!-- Right Column: Manual Stock Adjustment Form -->
-    <div class="glass-panel">
+    <div class="panel">
         <div class="panel-header">
-            <h2>Stock Adjustment</h2>
+            <h2>Record Movement</h2>
         </div>
-        <div class="panel-content">
+        <div class="panel-body">
             <form action="{{ url_for('inventory.adjust_stock') }}" method="POST">
-                
                 <div class="form-group">
-                    <label for="product_id" class="form-label">Select Product SKU</label>
+                    <label for="product_id" class="form-label">Product / SKU</label>
                     <select id="product_id" name="product_id" class="form-control" required>
-                        <option value="">-- Choose SKU / Product --</option>
+                        <option value="">-- Select SKU --</option>
                         {% for p in products %}
-                            <option value="{{ p.id }}">{{ p.id }} - {{ p.product_name }} (Stock: {{ p.quantity }})</option>
+                            <option value="{{ p.id }}">{{ p.id }} &mdash; {{ p.product_name }} (Stock: {{ p.quantity }})</option>
                         {% endfor %}
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="type" class="form-label">Transaction Type</label>
+                    <label for="type" class="form-label">Movement Type</label>
                     <select id="type" name="type" class="form-control" required onchange="handleTypeChange(this.value)">
                         <option value="IN">Stock IN (Receive goods)</option>
-                        <option value="OUT">Stock OUT (Ship/Consume goods)</option>
+                        <option value="OUT">Stock OUT (Ship / Consume goods)</option>
                         {% if session.get('user_role') in ['Admin', 'Manager'] %}
-                            <option value="ADJUST">Reconcile Override (Force set inventory level)</option>
+                            <option value="ADJUST">Reconcile Override (Set exact count)</option>
                         {% endif %}
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label id="qty-label" for="quantity" class="form-label">Adjustment Quantity</label>
-                    <input type="number" id="quantity" name="quantity" class="form-control" min="1" placeholder="Enter quantity" required>
-                    <small id="qty-help" style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">
-                        Number of items to add to current stock.
-                    </small>
+                    <label id="qty-label" for="quantity" class="form-label">Quantity</label>
+                    <input type="number" id="quantity" name="quantity" class="form-control" min="1" placeholder="Enter amount" required>
+                    <span id="qty-help" class="form-hint">Number of units received to add to existing stock.</span>
                 </div>
 
-                <div class="glass-panel" style="padding: 16px; margin: 24px 0 16px 0; border-color: rgba(245, 158, 11, 0.15); background: rgba(245, 158, 11, 0.02); font-size: 0.8rem; color: var(--text-secondary);">
-                    <i class='bx bx-info-circle' style="color: var(--accent-warning); margin-right: 4px; vertical-align: middle; font-size: 1rem;"></i>
-                    <span>This action is logged under your operator profile (<strong>{{ session.get('username') }}</strong>) and updates shelf capacity records.</span>
+                <div style="background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; font-size: 11px; color: var(--text-muted); margin: 14px 0;">
+                    Movement will be logged under operator <strong>{{ session.get('username') }}</strong> and recalculate shelf occupancy.
                 </div>
 
-                <button type="submit" class="btn btn-teal" style="width: 100%; justify-content: center; padding: 12px;">
-                    <i class='bx bx-check-shield'></i>
-                    <span>Apply Movement</span>
-                </button>
+                <button type="submit" class="btn btn-primary btn-block">Record Movement</button>
             </form>
         </div>
     </div>
@@ -124,14 +118,14 @@ function handleTypeChange(val) {
     const help = document.getElementById('qty-help');
     
     if (val === 'IN') {
-        label.innerText = "Adjustment Quantity (Stock-In)";
-        help.innerText = "Number of items to add to current stock.";
+        label.innerText = "Quantity (Stock IN)";
+        help.innerText = "Number of units received to add to existing stock.";
     } else if (val === 'OUT') {
-        label.innerText = "Adjustment Quantity (Stock-Out)";
-        help.innerText = "Number of items to subtract from current stock.";
+        label.innerText = "Quantity (Stock OUT)";
+        help.innerText = "Number of units to deduct from inventory.";
     } else if (val === 'ADJUST') {
-        label.innerText = "Reconcile Count (Exact Override)";
-        help.innerText = "Sets the item's total inventory count directly to this number, logging the difference.";
+        label.innerText = "Reconcile Count (Exact Count)";
+        help.innerText = "Sets the item inventory count directly to this value and logs the delta.";
     }
 }
 </script>

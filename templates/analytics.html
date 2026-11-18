@@ -1,125 +1,116 @@
 {% extends "base.html" %}
 
-{% block title %}DWMS - Inventory Analytics{% endblock %}
+{% block title %}Analytics - Digital Warehouse System{% endblock %}
 
 {% block content %}
-<div class="header-container">
-    <div class="page-title">
-        <h1>Analytics Dashboard</h1>
-        <p>In-depth statistics on warehouse efficiency, category values, and flow trends</p>
+<div class="page-header">
+    <div class="page-header-title">
+        <h1>Inventory Analytics</h1>
+        <p>Turnover velocity, category valuation share, and storage utilization</p>
     </div>
 </div>
 
-<!-- Analytics Charts Grid -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
-    
+<div class="layout-equal" style="margin-bottom: 16px;">
     <!-- Chart 1: Stock Movement Line Chart -->
-    <div class="glass-panel" style="display: flex; flex-direction: column;">
-        <div class="panel-header" style="border-bottom: none; padding-bottom: 0;">
-            <h2>Stock Movements Trend</h2>
+    <div class="panel">
+        <div class="panel-header">
+            <h2>Stock Movements Over Time</h2>
         </div>
-        <div class="panel-content" style="display: flex; align-items: center; justify-content: center; flex-grow: 1;">
+        <div class="panel-body" style="text-align: center;">
             {% if chart_movement %}
-                <img src="{{ chart_movement }}" alt="Stock Movement Chart" style="max-width: 100%; height: auto; display: block;">
+                <img src="{{ chart_movement }}" alt="Stock Movement Traffic" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
             {% else %}
-                <div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
-                    <i class='bx bx-line-chart' style="font-size: 3rem; margin-bottom: 8px; display: block;"></i>
-                    <p>Insufficient transaction data to plot movements.</p>
+                <div class="empty-state">
+                    Insufficient transaction history to chart movement trends.
                 </div>
             {% endif %}
         </div>
     </div>
 
     <!-- Chart 2: Category Breakdown Donut Chart -->
-    <div class="glass-panel" style="display: flex; flex-direction: column;">
-        <div class="panel-header" style="border-bottom: none; padding-bottom: 0;">
-            <h2>Category Distribution</h2>
+    <div class="panel">
+        <div class="panel-header">
+            <h2>Inventory by Category</h2>
         </div>
-        <div class="panel-content" style="display: flex; align-items: center; justify-content: center; flex-grow: 1;">
+        <div class="panel-body" style="text-align: center;">
             {% if chart_category %}
-                <img src="{{ chart_category }}" alt="Category Pie Chart" style="max-width: 100%; height: auto; display: block;">
+                <img src="{{ chart_category }}" alt="Category Share" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
             {% else %}
-                <div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
-                    <i class='bx bx-pie-chart-alt-2' style="font-size: 3rem; margin-bottom: 8px; display: block;"></i>
-                    <p>No products found to compile category shares.</p>
+                <div class="empty-state">
+                    No items in inventory to analyze category distribution.
                 </div>
             {% endif %}
         </div>
     </div>
 
     <!-- Chart 3: Warehouse Capacity Bar Chart -->
-    <div class="glass-panel" style="display: flex; flex-direction: column;">
-        <div class="panel-header" style="border-bottom: none; padding-bottom: 0;">
-            <h2>Zone Limits & Load</h2>
+    <div class="panel">
+        <div class="panel-header">
+            <h2>Zone Capacity & Utilization</h2>
         </div>
-        <div class="panel-content" style="display: flex; align-items: center; justify-content: center; flex-grow: 1;">
+        <div class="panel-body" style="text-align: center;">
             {% if chart_zone %}
-                <img src="{{ chart_zone }}" alt="Zone Utilization Chart" style="max-width: 100%; height: auto; display: block;">
+                <img src="{{ chart_zone }}" alt="Zone Utilization" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
             {% else %}
-                <div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
-                    <i class='bx bx-bar-chart-alt-2' style="font-size: 3rem; margin-bottom: 8px; display: block;"></i>
-                    <p>No warehouse zones registered in the system.</p>
+                <div class="empty-state">
+                    No warehouse zones configured.
                 </div>
             {% endif %}
         </div>
     </div>
 
-    <!-- Chart 4: Fast Moving Items horizontal Bar Chart -->
-    <div class="glass-panel" style="display: flex; flex-direction: column;">
-        <div class="panel-header" style="border-bottom: none; padding-bottom: 0;">
-            <h2>Highest Velocity Products</h2>
+    <!-- Chart 4: Fast Moving Items -->
+    <div class="panel">
+        <div class="panel-header">
+            <h2>High-Velocity Products (Outward Volume)</h2>
         </div>
-        <div class="panel-content" style="display: flex; align-items: center; justify-content: center; flex-grow: 1;">
+        <div class="panel-body" style="text-align: center;">
             {% if chart_fast %}
-                <img src="{{ chart_fast }}" alt="Fast Moving Items Chart" style="max-width: 100%; height: auto; display: block;">
+                <img src="{{ chart_fast }}" alt="Fast Moving Items" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
             {% else %}
-                <div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
-                    <i class='bx bx-trending-up' style="font-size: 3rem; margin-bottom: 8px; display: block;"></i>
-                    <p>No outgoing shipments logged to rank product velocities.</p>
+                <div class="empty-state">
+                    No outgoing shipments logged to rank product velocities.
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
 
-<!-- Row 3: Slow Moving Products Table -->
-<div class="glass-panel" style="margin-bottom: 32px;">
+<!-- Slow-Moving Products Table -->
+<div class="panel">
     <div class="panel-header">
-        <h2>Slow-Moving Inventory Alert</h2>
-        <span class="badge badge-warning">High Risk of Dead Stock</span>
+        <h2>Slow-Moving Inventory Audit</h2>
+        <span class="text-sm text-muted">Items with minimal turnover occupying shelf space</span>
     </div>
-    <div class="panel-content">
-        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 20px;">
-            The following products have minimal outward shipments (low OUT transactions) but are occupying physical warehouse shelf space. Consider adjustments or promotional clearance.
-        </p>
+    <div class="panel-body" style="padding: 0;">
         {% if slow_moving %}
-            <div class="table-responsive">
-                <table class="custom-table">
+            <div class="table-wrap">
+                <table>
                     <thead>
                         <tr>
-                            <th>Product SKU</th>
+                            <th>SKU</th>
                             <th>Product Name</th>
-                            <th>Current Inventory Count</th>
-                            <th>Cumulative Units Shipped</th>
-                            <th>Status Action</th>
+                            <th>Stock Count</th>
+                            <th>Units Shipped</th>
+                            <th>Status Flag</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for s in slow_moving %}
                             <tr>
-                                <td>
-                                    <span class="badge badge-info" style="font-family: monospace; font-size: 0.85rem;">{{ s.id }}</span>
+                                <td class="mono">
+                                    <a href="{{ url_for('products.view_product', product_id=s.id) }}" style="color: var(--accent); text-decoration: none; font-weight: 600;">
+                                        {{ s.id }}
+                                    </a>
                                 </td>
-                                <td style="font-weight: 600;">{{ s.product_name }}</td>
-                                <td style="font-weight: 700;">{{ s.quantity }} units</td>
-                                <td style="color: var(--text-secondary); font-weight: 600;">
-                                    {{ s.total_sold }} units
-                                </td>
+                                <td><strong>{{ s.product_name }}</strong></td>
+                                <td class="mono">{{ s.quantity }} units</td>
+                                <td class="mono text-muted">{{ s.total_sold }} units</td>
                                 <td>
                                     {% if s.quantity > 50 and s.total_sold == 0 %}
-                                        <span class="badge badge-danger">Critical Dead Stock</span>
+                                        <span class="badge badge-danger">Dead Stock</span>
                                     {% else %}
-                                        <span class="badge badge-warning">Low Flow</span>
+                                        <span class="badge badge-warning">Low Turnover</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -128,7 +119,9 @@
                 </table>
             </div>
         {% else %}
-            <p style="color: var(--text-muted); text-align: center; padding: 20px 0;">No slow-moving products analyzed.</p>
+            <div class="empty-state">
+                No slow-moving inventory detected.
+            </div>
         {% endif %}
     </div>
 </div>

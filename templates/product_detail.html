@@ -1,156 +1,166 @@
 {% extends "base.html" %}
 
-{% block title %}DWMS - Product {{ product.id }}{% endblock %}
+{% block title %}{{ product.id }} - Product Details - Digital Warehouse System{% endblock %}
 
 {% block content %}
-<div class="header-container">
-    <div class="page-title">
-        <h1>Product Master Record</h1>
-        <p>SKU Details, Shelf Location, QR Sticker Generation, & Audit Logs</p>
+<div class="page-header">
+    <div class="page-header-title">
+        <h1>{{ product.id }} &mdash; {{ product.product_name }}</h1>
+        <p>Master record, shelf bin location, printable QR code, and transaction logs</p>
     </div>
-    <div class="header-actions">
-        <a href="{{ url_for('products.index') }}" class="btn btn-secondary">
-            <i class='bx bx-left-arrow-alt'></i>
-            <span>Back to Products</span>
-        </a>
-        {% if session.get('user_role') in ['Admin', 'Manager'] %}
-            <a href="{{ url_for('products.edit_product', product_id=product.id) }}" class="btn btn-primary">
-                <i class='bx bx-edit'></i>
-                <span>Edit Product</span>
-            </a>
+    <div class="page-actions">
+        <a href="{{ url_for('products.index') }}" class="btn">Back to products</a>
+        {% if session.get('user_role') in ['Admin', 'Manager'] and not editing_mode %}
+            <a href="{{ url_for('products.edit_product', product_id=product.id) }}" class="btn btn-primary">Edit product</a>
         {% endif %}
     </div>
 </div>
 
 {% if not editing_mode %}
-    <!-- View Product Details Panel -->
-    <div style="display: flex; flex-direction: column; gap: 24px; margin-bottom: 32px;">
-        
-        <!-- Header Info Card -->
-        <div class="glass-panel" style="padding: 24px;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
-                <div style="flex-grow: 1;">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                        <span class="badge badge-info" style="font-family: monospace; font-size: 0.9rem; padding: 6px 12px;">{{ product.id }}</span>
-                        <span class="badge badge-warning">{{ product.category }}</span>
-                    </div>
-                    <h2 style="font-size: 1.8rem; font-weight: 700;">{{ product.product_name }}</h2>
+    <div class="layout-split">
+        <!-- Left: Product Specs & History -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- Specs Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Item Specifications</h2>
+                    <span class="badge">{{ product.category }}</span>
                 </div>
-
-                <!-- Price & Stock Callouts -->
-                <div style="display: flex; gap: 24px;">
-                    <div style="text-align: right;">
-                        <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Unit Valuation</span>
-                        <h3 style="font-size: 1.5rem; color: var(--accent-teal);">${{ "{:,.2f}".format(product.unit_price) }}</h3>
-                    </div>
-                    <div style="text-align: right;">
-                        <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Total Stock</span>
-                        <h3 style="font-size: 1.5rem; color: {% if product.quantity <= 10 %}var(--accent-danger){% else %}var(--accent-success){% endif %};">
-                            {{ product.quantity }} Units
-                        </h3>
-                    </div>
+                <div class="panel-body">
+                    <table style="width: 100%;">
+                        <tbody>
+                            <tr>
+                                <td style="width: 160px;" class="text-muted">Product SKU</td>
+                                <td class="mono"><strong>{{ product.id }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Item Name</td>
+                                <td>{{ product.product_name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Category</td>
+                                <td>{{ product.category }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Unit Valuation</td>
+                                <td class="mono">${{ "{:,.2f}".format(product.unit_price) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Current Stock Count</td>
+                                <td>
+                                    {% if product.quantity <= 10 %}
+                                        <span class="badge badge-low">{{ product.quantity }} units (Low stock)</span>
+                                    {% else %}
+                                        <span class="mono"><strong>{{ product.quantity }} units</strong></span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Shelf Allocation</td>
+                                <td>
+                                    {% if product.shelf_id %}
+                                        <span class="mono">{{ product.shelf_id }}</span>
+                                        {% if product.shelf_zone %}
+                                            <span class="text-muted text-sm">({{ product.shelf_zone }})</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Assigned Supplier</td>
+                                <td>{{ product.supplier_name or 'None specified' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <hr style="border: none; border-top: 1px solid var(--border-color); margin: 20px 0;">
-
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
-                <div style="display: flex; gap: 32px;">
-                    <div>
-                        <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Shelf Location</span>
-                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
-                            <i class='bx bx-map-pin' style="color: var(--accent-purple);"></i>
-                            <p style="font-weight: 600;">
-                                {{ product.shelf_id or 'Unassigned' }}
-                                {% if product.shelf_zone %}
-                                    <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-secondary);">({{ product.shelf_zone }})</span>
-                                {% endif %}
-                            </p>
-                        </div>
-                    </div>
-                    <div>
-                        <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Supplier Partner</span>
-                        <p style="font-weight: 500;">{{ product.supplier_name or 'None' }}</p>
-                    </div>
+            <!-- Transaction Audit Trail -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Movement History</h2>
+                    <span class="text-sm text-muted">{{ transactions | length }} entries</span>
                 </div>
-
-                <!-- QR Code & Printable Sticker Card -->
-                <div class="glass-panel" style="width: 220px; padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; border-color: rgba(0, 0, 0, 0.08); background: #f8fafc;">
-                    <div style="background: white; padding: 12px; border-radius: 12px; display: inline-block; border: 1px solid var(--border-color);">
-                        <img src="{{ url_for('static', filename=product.qr_code_path) }}" alt="QR Code" style="width: 140px; height: 140px; display: block;">
-                    </div>
-                    <div style="margin-top: 12px;">
-                        <span style="font-family: monospace; font-size: 0.8rem; font-weight: 700; color: var(--text-primary);">{{ product.id }}</span>
-                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">QR Code Label</p>
-                    </div>
-                    <button onclick="window.print();" class="btn btn-secondary" style="width: 100%; justify-content: center; margin-top: 14px; padding: 8px; font-size: 0.8rem; border-color: var(--accent-purple);">
-                        <i class='bx bx-printer'></i>
-                        <span>Print Sticker</span>
-                    </button>
+                <div class="panel-body" style="padding: 0;">
+                    {% if transactions %}
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Tx ID</th>
+                                        <th>Type</th>
+                                        <th>Quantity</th>
+                                        <th>Operator</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for tx in transactions %}
+                                        <tr>
+                                            <td class="mono text-muted text-sm">{{ tx.date }}</td>
+                                            <td class="mono text-muted text-sm">#{{ tx.id }}</td>
+                                            <td>
+                                                {% if tx.transaction_type == 'IN' %}
+                                                    <span class="badge badge-in">IN</span>
+                                                {% elif tx.transaction_type == 'OUT' %}
+                                                    <span class="badge badge-out">OUT</span>
+                                                {% else %}
+                                                    <span class="badge badge-adjust">ADJUST</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="mono"><strong>{{ tx.quantity }}</strong></td>
+                                            <td class="text-muted">{{ tx.username }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            No movements logged for this SKU yet.
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Product Log / Transactions History -->
-        <div class="glass-panel">
-            <div class="panel-header">
-                <h2>Product Transaction Logs</h2>
-            </div>
-            <div class="panel-content" style="max-height: 400px; overflow-y: auto;">
-                {% if transactions %}
-                    <div class="table-responsive">
-                        <table class="custom-table">
-                            <thead>
-                                <tr>
-                                    <th>Timestamp</th>
-                                    <th>Tx ID</th>
-                                    <th>Type</th>
-                                    <th>Quantity</th>
-                                    <th>Operator</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for tx in transactions %}
-                                    <tr>
-                                        <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ tx.date }}</td>
-                                        <td style="font-family: monospace; font-size: 0.85rem; color: var(--text-muted);">#{{ tx.id }}</td>
-                                        <td>
-                                            {% if tx.transaction_type == 'IN' %}
-                                                <span class="badge badge-success">IN</span>
-                                            {% elif tx.transaction_type == 'OUT' %}
-                                                <span class="badge badge-danger">OUT</span>
-                                            {% else %}
-                                                <span class="badge badge-warning">ADJUST</span>
-                                            {% endif %}
-                                        </td>
-                                        <td style="font-weight: 700;">{{ tx.quantity }}</td>
-                                        <td style="color: var(--text-secondary);">{{ tx.username }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+        <!-- Right: Printable QR Code Sticker -->
+        <div>
+            <div class="panel printable-sticker">
+                <div class="panel-header no-print">
+                    <h2>QR Code Label</h2>
+                </div>
+                <div class="panel-body" style="text-align: center;">
+                    <div style="border: 1px solid var(--border); padding: 12px; display: inline-block; background: #ffffff;">
+                        <img src="{{ url_for('static', filename=product.qr_code_path) }}" alt="QR Code" style="width: 130px; height: 130px; display: block; margin: 0 auto;">
                     </div>
-                {% else %}
-                    <div style="text-align: center; padding: 40px 0; color: var(--text-muted);">
-                        <i class='bx bx-receipt' style="font-size: 3rem; margin-bottom: 8px; display: block;"></i>
-                        <p>No transactions logged for this product yet.</p>
+                    <div style="margin-top: 10px;">
+                        <div class="mono" style="font-size: 13px; font-weight: 600;">{{ product.id }}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">{{ product.product_name }}</div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Bin: {{ product.shelf_id or 'Unassigned' }}</div>
                     </div>
-                {% endif %}
+                    <div class="no-print" style="margin-top: 16px;">
+                        <button onclick="window.print();" class="btn btn-block">Print Label</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 {% else %}
     <!-- Edit Form View -->
-    <div style="max-width: 600px; margin: 0 auto;">
-        <div class="glass-panel">
+    <div style="max-width: 520px;">
+        <div class="panel">
             <div class="panel-header">
-                <h2>Edit Details</h2>
+                <h2>Edit Product Master Record</h2>
             </div>
-            <div class="panel-content">
+            <div class="panel-body">
                 <form action="{{ url_for('products.edit_product', product_id=product.id) }}" method="POST">
                     <div class="form-group">
-                        <label class="form-label">Product ID (SKU - Cannot change)</label>
-                        <input type="text" class="form-control" value="{{ product.id }}" disabled style="font-family: monospace; color: var(--text-secondary); cursor: not-allowed; background: #f1f5f9;">
+                        <label class="form-label">SKU / Product ID</label>
+                        <input type="text" class="form-control mono" value="{{ product.id }}" disabled style="background: var(--surface-alt); color: var(--text-muted);">
+                        <span class="form-hint">Unique identifier cannot be modified once created.</span>
                     </div>
 
                     <div class="form-group">
@@ -165,16 +175,16 @@
 
                     <div class="form-group">
                         <label for="unit_price" class="form-label">Unit Price ($)</label>
-                        <input type="number" id="unit_price" name="unit_price" class="form-control" value="{{ product.unit_price }}" step="0.01" min="0.00" required>
+                        <input type="number" id="unit_price" name="unit_price" class="form-control mono" value="{{ product.unit_price }}" step="0.01" min="0.00" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="shelf_id" class="form-label">Warehouse Shelf Allocation</label>
+                        <label for="shelf_id" class="form-label">Shelf Bin Allocation</label>
                         <select id="shelf_id" name="shelf_id" class="form-control">
-                            <option value="">-- Unassigned / Virtual Stock --</option>
+                            <option value="">-- Unassigned --</option>
                             {% for s in shelves %}
                                 <option value="{{ s.shelf_id }}" {% if product.shelf_id == s.shelf_id %}selected{% endif %}>
-                                    {{ s.shelf_id }} ({{ s.zone }} - Cap: {{ s.capacity }}, Occ: {{ s.occupancy }})
+                                    {{ s.shelf_id }} ({{ s.zone }} - Capacity: {{ s.capacity }}, Occupancy: {{ s.occupancy }})
                                 </option>
                             {% endfor %}
                         </select>
@@ -192,51 +202,13 @@
                         </select>
                     </div>
 
-                    <div style="display: flex; gap: 12px; margin-top: 24px;">
-                        <button type="submit" class="btn btn-primary" style="flex-grow: 1; justify-content: center; padding: 12px;">
-                            <i class='bx bx-save'></i>
-                            <span>Save Changes</span>
-                        </button>
-                        <a href="{{ url_for('products.view_product', product_id=product.id) }}" class="btn btn-secondary" style="padding: 12px 20px;">Cancel</a>
+                    <div style="display: flex; gap: 8px; margin-top: 18px;">
+                        <button type="submit" class="btn btn-primary" style="flex-grow: 1;">Save changes</button>
+                        <a href="{{ url_for('products.view_product', product_id=product.id) }}" class="btn">Cancel</a>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 {% endif %}
-
-<!-- Style for sticker printing -->
-<style>
-@media print {
-    body * {
-        visibility: hidden;
-    }
-    .app-container, .main-content {
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    /* Only print the QR sticker card */
-    .glass-panel:has(img[alt="QR Code"]) {
-        visibility: visible !important;
-        position: absolute;
-        left: 50%;
-        top: 30%;
-        transform: translate(-50%, -50%);
-        border: 2px solid black !important;
-        background: white !important;
-        color: black !important;
-        box-shadow: none !important;
-        padding: 24px !important;
-        border-radius: 12px !important;
-        width: 260px !important;
-    }
-    .glass-panel:has(img[alt="QR Code"]) * {
-        visibility: visible !important;
-        color: black !important;
-    }
-    .glass-panel:has(img[alt="QR Code"]) button {
-        display: none !important;
-    }
-}
-</style>
 {% endblock %}

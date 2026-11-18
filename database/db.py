@@ -55,9 +55,9 @@ def init_db():
 
     # 2. Seed Suppliers
     suppliers = [
-        ('Global Tech Distributors', 'John Doe', '555-0199', 'john@globaltech.com', '123 Tech Way, Silicon Valley, CA'),
-        ('Apex Supplies Inc.', 'Sarah Smith', '555-0233', 'sarah@apex.com', '456 Warehouse Rd, Industrial Area, TX'),
-        ('Pioneer Food & Beverage', 'Michael Brown', '555-0455', 'michael@pioneer.com', '789 Grocery Blvd, Chicago, IL')
+        ('Apex Logistics & Freight', 'David Vance', '415-555-0142', 'd.vance@apexlogistics.net', '1840 Industrial Pkwy, Hayward, CA'),
+        ('Midwest Component Works', 'Elena Rostova', '312-555-0819', 'erostova@midwestcw.com', '920 W Pershing Rd, Chicago, IL'),
+        ('Cascadia Supply Co.', 'Marcus Chen', '206-555-0177', 'mchen@cascadiapack.com', '4400 4th Ave S, Seattle, WA')
     ]
     cursor.executemany(
         "INSERT INTO suppliers (company_name, contact_person, phone, email, address) VALUES (?, ?, ?, ?, ?);",
